@@ -25,6 +25,7 @@ RARITY_GROUPS = {
         "cards": [
             {"id": 1, "name": "Бургер Кинг", "image": "cards/Common/card1.jpg", "points": 10},
             {"id": 2, "name": "Служебное помещение", "image": "cards/Common/card1.1.jpg", "points": 10},
+            {"id": 3, "name": "Оператор опять нюхает", "image": "cards/Common/card1.2.jpg", "points": 10},
         ]
     },
     "Редкая": {
@@ -40,6 +41,7 @@ RARITY_GROUPS = {
         "emoji": "🔵",
         "cards": [
             {"id": 7, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
+            {"id": 8, "name": "УВЗ", "image": "cards/SuperRare/card3.1.jpg", "points": 200},
         ]
     },
     "Эпическая": {
@@ -56,6 +58,7 @@ RARITY_GROUPS = {
         "cards": [
             {"id": 13, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
             {"id": 14, "name": "Гриша Шалун", "image": "cards/Mythic/card5.1.jpg", "points": 5000},
+            {"id": 14.1, "name": "ЕВРАЗ", "image": "cards/Mythic/card5.2.jpg", "points": 5000},
         ]
     },
     "Легендарная": {
