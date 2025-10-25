@@ -58,14 +58,14 @@ RARITY_GROUPS = {
         "cards": [
             {"id": 13, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
             {"id": 14, "name": "Гриша Шалун", "image": "cards/Mythic/card5.1.jpg", "points": 5000},
-            {"id": 14.1, "name": "ЕВРАЗ", "image": "cards/Mythic/card5.2.jpg", "points": 5000},
+            {"id": 15, "name": "ЕВРАЗ", "image": "cards/Mythic/card5.2.jpg", "points": 5000},
         ]
     },
     "Легендарная": {
         "chance": 3,
         "emoji": "🟡",
         "cards": [
-            {"id": 15, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
+            {"id": 16, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
         ]
     },
     "Секретная": {
@@ -154,11 +154,16 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_used = user_data.get(user_id, {}).get('last_used')
     if last_used:
         last_time = datetime.fromisoformat(last_used)
-        if datetime.now() - last_time < timedelta(minutes=COOLDOWN_MINUTES):
-            remaining = (last_time + timedelta(minutes=COOLDOWN_MINUTES)) - datetime.now()
-            minutes = int(remaining.seconds // 60)
+        time_diff = datetime.now() - last_time
+        
+        # Правильный расчет оставшегося времени
+        if time_diff < timedelta(minutes=COOLDOWN_MINUTES):
+            remaining_seconds = (timedelta(minutes=COOLDOWN_MINUTES) - time_diff).total_seconds()
+            minutes = int(remaining_seconds // 60)
+            seconds = int(remaining_seconds % 60)
+            
             await update.message.reply_text(
-                f"⏳ Следующая карточка будет доступна через {minutes} минут"
+                f"⏳ Следующая карточка будет доступна через {minutes} минут {seconds} секунд"
             )
             return
 
