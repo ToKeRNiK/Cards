@@ -2,7 +2,7 @@ import os
 import json
 import random
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -153,17 +153,41 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     last_used = user_data.get(user_id, {}).get('last_used')
     if last_used:
-        last_time = datetime.fromisoformat(last_used)
-        time_diff = datetime.now() - last_time
+        # Преобразуем строку времени в объект datetime с учетом временной зоны
+        if last_used.endswith('Z'):
+            last_time = datetime.fromisoformat(last_used.replace('Z', '+00:00'))
+        else:
+            last_time = datetime.fromisoformat(last_used)
         
-        # Правильный расчет оставшегося времени
-        if time_diff < timedelta(minutes=COOLDOWN_MINUTES):
-            remaining_seconds = (timedelta(minutes=COOLDOWN_MINUTES) - time_diff).total_seconds()
-            minutes = int(remaining_seconds // 60)
-            seconds = int(remaining_seconds % 60)
+        # Получаем текущее время с временной зоной
+        current_time = datetime.now(timezone.utc)
+        
+        # Если last_time наивный (без временной зоны), считаем его UTC
+        if last_time.tzinfo is None:
+            last_time = last_time.replace(tzinfo=timezone.utc)
+        
+        # Вычисляем разницу во времени
+        time_passed = current_time - last_time
+        cooldown_duration = timedelta(minutes=COOLDOWN_MINUTES)
+        
+        # Проверяем, прошел ли кулдаун
+        if time_passed < cooldown_duration:
+            remaining_time = cooldown_duration - time_passed
+            total_seconds = int(remaining_time.total_seconds())
             
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            
+            if hours > 0:
+                time_message = f"{hours} часов {minutes} минут {seconds} секунд"
+            elif minutes > 0:
+                time_message = f"{minutes} минут {seconds} секунд"
+            else:
+                time_message = f"{seconds} секунд"
+                
             await update.message.reply_text(
-                f"⏳ Следующая карточка будет доступна через {minutes} минут {seconds} секунд"
+                f"⏳ Следующая карточка будет доступна через {time_message}"
             )
             return
 
@@ -190,11 +214,11 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "name": card["name"],
         "rarity": card["rarity"],
         "points": card["points"],
-        "acquired": datetime.now().isoformat()
+        "acquired": datetime.now(timezone.utc).isoformat()
     })
     
     user_data[user_id]["total_points"] += card["points"]
-    user_data[user_id]['last_used'] = datetime.now().isoformat()
+    user_data[user_id]['last_used'] = datetime.now(timezone.utc).isoformat()
     save_user_data(user_data)
     
     logger.info(f"User {user_id} received card: {card['name']}")
