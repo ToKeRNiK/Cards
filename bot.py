@@ -13,9 +13,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Конфигурация - получаем токен из переменных окружения
+# Конфигурация - получаем токен из переменных окружения Railway
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8295319122:AAFGvZ1GFqPv8EkCTQnXjSKzd4dOG8rz1bg')
-COOLDOWN_MINUTES = 30
+COOLDOWN_MINUTES = 15
 
 # Группировка карточек по редкостям
 RARITY_GROUPS = {
@@ -81,6 +81,7 @@ def load_user_data():
         with open('user_data.json', 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
+        logger.info("user_data.json не найден, создаю новый файл")
         return {}
 
 def save_user_data(data):
