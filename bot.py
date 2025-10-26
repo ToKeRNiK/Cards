@@ -19,30 +19,23 @@ COOLDOWN_MINUTES = 15
 
 # Группировка карточек по редкостям
 RARITY_GROUPS = {
-    "Обычная": {
-        "chance": 39,
-        "emoji": "⚪",
-        "cards": [
-            {"id": 1, "name": "Бургер Кинг", "image": "cards/Common/card1.jpg", "points": 10},
-            {"id": 1.1, "name": "Служебное помещение", "image": "cards/Common/card1.1.jpg", "points": 10},
-            {"id": 1.2, "name": "Оператор опять нюхает", "image": "cards/Common/card1.2.jpg", "points": 10},
-            {"id": 1.3, "name": "Костя", "image": "cards/Common/card1.3.jpg", "points": 10},
-        ]
-    },
     "Редкая": {
-        "chance": 25,
+        "chance": 30,
         "emoji": "🟢",
         "cards": [
-            {"id": 2, "name": "Вкусно и точка", "image": "cards/Rare/card2.jpg", "points": 50},
             {"id": 2.1, "name": "Два задрота", "image": "cards/Rare/card2.1.jpg", "points": 50},
             {"id": 2.2, "name": "Умный оператор в очках скачать обои", "image": "cards/Rare/card2.2.jpg", "points": 50},
             {"id": 2.3, "name": "Костя Водолаз", "image": "cards/Rare/card2.3.jpg", "points": 50},
             {"id": 2.4, "name": "Михаил Динозавр", "image": "cards/Rare/card2.4.jpg", "points": 50},
             {"id": 2.5, "name": "Михаил Мевдед", "image": "cards/Rare/card2.5.jpg", "points": 50},
+            {"id": 2.6, "name": "Бургер Кинг", "image": "cards/Rare/card2.6.jpg", "points": 50},
+            {"id": 2.7, "name": "Служебное помещение", "image": "cards/Rare/card2.7.jpg", "points": 50},
+            {"id": 2.8, "name": "Оператор опять нюхает", "image": "cards/Rare/card2.8.jpg", "points": 50},
+            {"id": 2.9, "name": "Костя", "image": "cards/Rare/card2.9.jpg", "points": 50},
         ]
     },
     "Сверхредкая": {
-        "chance": 15,
+        "chance": 23,
         "emoji": "🔵",
         "cards": [
             {"id": 3, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
@@ -56,7 +49,7 @@ RARITY_GROUPS = {
         ]
     },
     "Эпическая": {
-        "chance": 10,
+        "chance": 17,
         "emoji": "🟣",
         "cards": [
             {"id": 4, "name": "Михаил Динозавр", "image": "cards/Epic/card4.jpg", "points": 1000},
@@ -67,10 +60,11 @@ RARITY_GROUPS = {
             {"id": 4.5, "name": "Вёселый Тимофей", "image": "cards/Epic/card4.5.jpg", "points": 1000},
             {"id": 4.6, "name": "Мирослав и королевские кабаны", "image": "cards/Epic/card4.6.jpg", "points": 1000},
             {"id": 4.7, "name": "Кремка с морской солью", "image": "cards/Epic/card4.7.jpg", "points": 1000},
+            {"id": 4.8, "name": "Вкусно и точка", "image": "cards/Epic/card4.8.jpg", "points": 1000},
         ]
     },
     "Мифическая": {
-        "chance": 7,
+        "chance": 15,
         "emoji": "🔴",
         "cards": [
             {"id": 5, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
@@ -85,7 +79,7 @@ RARITY_GROUPS = {
         ]
     },
     "Легендарная": {
-        "chance": 3,
+        "chance": 10,
         "emoji": "🟡",
         "cards": [
             {"id": 6, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
@@ -99,7 +93,7 @@ RARITY_GROUPS = {
         ]
     },
     "Секретная": {
-        "chance": 1,
+        "chance": 4,
         "emoji": "⚫️",
         "cards": [
             {"id": 7, "name": "Который час?", "image": "cards/Secret/card7.jpg", "points": 20000},
@@ -112,7 +106,16 @@ RARITY_GROUPS = {
             {"id": 7.7, "name": "twenty-seven", "image": "cards/Secret/card7.7.jpg", "points": 20000},
         ]
     },
+    "Эксклюзивная": {
+        "chance": 1,
+        "emoji": "🟠",
+        "cards": [
+            {"id": 8, "name": "Миши в поезде", "image": "cards/Exclusive/card8.jpg", "points": 50000},
+            {"id": 8.1, "name": "Миши в Туапсе", "image": "cards/Exclusive/card8.1.jpg", "points": 50000},
+        ]
+    },
 }
+
 
 # Промокоды
 PROMOCODES = {
