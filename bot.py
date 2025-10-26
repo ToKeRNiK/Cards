@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация - получаем токен из переменных окружения Railway
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8295319122:AAFGvZ1GFqPv8EkCTQnXjSKzd4dOG8rz1bg')
-COOLDOWN_MINUTES = 15
+COOLDOWN_MINUTES = 5
 
 # Группировка карточек по редкостям
 RARITY_GROUPS = {
     "Редкая": {
-        "chance": 30,
+        "chance": 30.1,
         "emoji": "🟢",
         "cards": [
             {"id": 2.1, "name": "Два задрота", "image": "cards/Rare/card2.1.jpg", "points": 50},
@@ -35,7 +35,7 @@ RARITY_GROUPS = {
         ]
     },
     "Сверхредкая": {
-        "chance": 23,
+        "chance": 23.8,
         "emoji": "🔵",
         "cards": [
             {"id": 3, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
@@ -49,7 +49,7 @@ RARITY_GROUPS = {
         ]
     },
     "Эпическая": {
-        "chance": 17,
+        "chance": 17.6,
         "emoji": "🟣",
         "cards": [
             {"id": 4, "name": "Михаил Динозавр", "image": "cards/Epic/card4.jpg", "points": 1000},
@@ -64,7 +64,7 @@ RARITY_GROUPS = {
         ]
     },
     "Мифическая": {
-        "chance": 15,
+        "chance": 15.6,
         "emoji": "🔴",
         "cards": [
             {"id": 5, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
@@ -79,7 +79,7 @@ RARITY_GROUPS = {
         ]
     },
     "Легендарная": {
-        "chance": 10,
+        "chance": 10.4,
         "emoji": "🟡",
         "cards": [
             {"id": 6, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
@@ -93,7 +93,7 @@ RARITY_GROUPS = {
         ]
     },
     "Секретная": {
-        "chance": 4,
+        "chance": 2,
         "emoji": "⚫️",
         "cards": [
             {"id": 7, "name": "Который час?", "image": "cards/Secret/card7.jpg", "points": 20000},
@@ -107,7 +107,7 @@ RARITY_GROUPS = {
         ]
     },
     "Эксклюзивная": {
-        "chance": 1,
+        "chance": 0.5,
         "emoji": "🟠",
         "cards": [
             {"id": 8, "name": "Миши в поезде", "image": "cards/Exclusive/card8.jpg", "points": 50000},
@@ -509,11 +509,18 @@ async def show_card_navigation(query, context):
                 )
     except FileNotFoundError:
         # Если изображение не найдено, отправляем текстовое сообщение
-        await query.edit_message_text(
-            f"❌ Изображение карточки не найдено!\n\n{caption}",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
+        if query.message.photo:
+            await query.edit_message_text(
+                f"❌ Изображение карточки не найдено!\n\n{caption}",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+        else:
+            await query.message.reply_text(
+                f"❌ Изображение карточки не найдено!\n\n{caption}",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
 
 # Обработчик навигации
 async def handle_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -535,8 +542,15 @@ async def handle_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == "nav_next":
         user_data["current_card_index"] = (current_index + 1) % total_cards
     elif action == "back_to_rarities":
+        # Очищаем данные навигации
+        user_data.pop("current_rarity", None)
+        user_data.pop("rarity_cards", None)
+        user_data.pop("current_card_index", None)
         await show_inventory_from_callback(query, context)
         return
+    elif action == "nav_info":
+        # Просто обновляем сообщение без изменения индекса
+        pass
     
     await show_card_navigation(query, context)
 
@@ -575,7 +589,13 @@ async def show_inventory_from_callback(query, context):
         f"🎲 **Выберите редкость для просмотра:**"
     )
     
-    await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
+    # Проверяем, есть ли фото в сообщении
+    if query.message.photo:
+        # Если есть фото, заменяем его на текст
+        await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
+    else:
+        # Если нет фото, просто редактируем текст
+        await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
 
 # Команда /promo
 async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
