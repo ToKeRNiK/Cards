@@ -3,8 +3,8 @@ import json
 import random
 import logging
 from datetime import datetime, timedelta, timezone
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
 
 # Настройка логирования
 logging.basicConfig(
@@ -115,7 +115,6 @@ RARITY_GROUPS = {
         ]
     },
 }
-
 
 # Промокоды
 PROMOCODES = {
@@ -252,6 +251,36 @@ def add_card_to_user(user_id, card):
     
     logger.info(f"User {user_id} received card from promo: {card['name']}")
 
+# Получение статистики по карточкам пользователя
+def get_user_card_stats(user_id):
+    user_data = load_user_data()
+    if user_id not in user_data:
+        return {}
+    
+    inventory = user_data[user_id]["inventory"]
+    card_stats = {}
+    
+    for card in inventory:
+        card_id = card["card_id"]
+        if card_id not in card_stats:
+            # Находим оригинальную карточку для получения изображения и других данных
+            original_card = get_card_by_id(card_id)
+            if original_card:
+                card_stats[card_id] = {
+                    "name": original_card["name"],
+                    "image": original_card["image"],
+                    "rarity": original_card["rarity"],
+                    "points": original_card["points"],
+                    "emoji": original_card["emoji"],
+                    "count": 1,
+                    "total_points": original_card["points"]
+                }
+        else:
+            card_stats[card_id]["count"] += 1
+            card_stats[card_id]["total_points"] += card["points"]
+    
+    return card_stats
+
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rarity_info = "🎲 **Шансы редкостей:**\n"
@@ -361,7 +390,7 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     logger.info(f"User {user_id} received card: {card['name']}")
 
-# Команда /inventory
+# Команда /inventory - показывает меню выбора редкости
 async def show_inventory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     user_data = load_user_data()
@@ -373,28 +402,180 @@ async def show_inventory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     inventory = user_data[user_id]["inventory"]
     total_points = user_data[user_id]["total_points"]
     
+    # Считаем карточки по редкостям
     rarity_count = {}
     for card in inventory:
         rarity = card["rarity"]
         rarity_count[rarity] = rarity_count.get(rarity, 0) + 1
     
-    stats_text = f"📊 **Ваша коллекция:**\n"
-    stats_text += f"📚 Всего карточек: {len(inventory)}\n"
-    stats_text += f"⭐ Всего очков: {total_points}\n\n"
+    # Создаем клавиатуру с редкостями
+    keyboard = []
+    for rarity in RARITY_GROUPS:
+        if rarity in rarity_count and rarity_count[rarity] > 0:
+            emoji = RARITY_GROUPS[rarity]["emoji"]
+            count = rarity_count[rarity]
+            keyboard.append([InlineKeyboardButton(f"{emoji} {rarity} ({count})", callback_data=f"rarity_{rarity}")])
     
-    stats_text += "🎲 **По редкостям:**\n"
-    for rarity, count in rarity_count.items():
-        emoji = RARITY_GROUPS[rarity]["emoji"]
-        stats_text += f"{emoji} {rarity}: {count} шт.\n"
+    reply_markup = InlineKeyboardMarkup(keyboard)
     
-    stats_text += f"\n🆕 **Последние полученные:**\n"
-    recent_cards = inventory[-5:]
-    for card in recent_cards:
-        emoji = RARITY_GROUPS[card["rarity"]]["emoji"]
-        promo_mark = " 🎁" if card.get("from_promo") else ""
-        stats_text += f"{emoji} {card['name']} ({card['points']} очков){promo_mark}\n"
+    stats_text = (
+        f"📊 **Ваша коллекция:**\n"
+        f"📚 Всего карточек: {len(inventory)}\n"
+        f"⭐ Всего очков: {total_points}\n\n"
+        f"🎲 **Выберите редкость для просмотра:**"
+    )
     
-    await update.message.reply_text(stats_text, parse_mode='Markdown')
+    await update.message.reply_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
+
+# Обработчик выбора редкости
+async def show_rarity_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    rarity = query.data.replace("rarity_", "")
+    
+    card_stats = get_user_card_stats(user_id)
+    
+    # Фильтруем карточки по выбранной редкости
+    rarity_cards = {card_id: stats for card_id, stats in card_stats.items() if stats["rarity"] == rarity}
+    
+    if not rarity_cards:
+        await query.edit_message_text(f"❌ У вас нет карточек редкости: {rarity}")
+        return
+    
+    # Сохраняем данные для навигации
+    context.user_data["current_rarity"] = rarity
+    context.user_data["rarity_cards"] = list(rarity_cards.items())  # Список (card_id, stats)
+    context.user_data["current_card_index"] = 0
+    
+    # Показываем первую карточку
+    await show_card_navigation(query, context)
+
+# Функция для показа карточки с навигацией
+async def show_card_navigation(query, context):
+    user_data = context.user_data
+    rarity = user_data["current_rarity"]
+    cards = user_data["rarity_cards"]
+    current_index = user_data["current_card_index"]
+    
+    if current_index >= len(cards):
+        current_index = 0
+        user_data["current_card_index"] = 0
+    
+    card_id, card_stats = cards[current_index]
+    
+    # Создаем подпись
+    caption = (
+        f"🎴 **{card_stats['name']}**\n"
+        f"{card_stats['emoji']} **Редкость:** {card_stats['rarity']}\n"
+        f"📦 **Количество:** {card_stats['count']} шт.\n"
+        f"⭐ **Очки за штуку:** {card_stats['points']}\n"
+        f"💰 **Всего очков:** {card_stats['total_points']}\n"
+        f"📄 **Карточка {current_index + 1} из {len(cards)}**"
+    )
+    
+    # Создаем клавиатуру навигации
+    keyboard = []
+    
+    # Кнопки навигации
+    nav_buttons = []
+    if len(cards) > 1:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data="nav_prev"))
+        nav_buttons.append(InlineKeyboardButton(f"{current_index + 1}/{len(cards)}", callback_data="nav_info"))
+        nav_buttons.append(InlineKeyboardButton("Вперёд ➡️", callback_data="nav_next"))
+        keyboard.append(nav_buttons)
+    
+    # Кнопка возврата к выбору редкости
+    keyboard.append([InlineKeyboardButton("🔙 Назад к редкостям", callback_data="back_to_rarities")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        with open(card_stats['image'], 'rb') as photo:
+            if query.message.photo:
+                # Если сообщение уже содержит фото, редактируем его
+                await query.message.edit_media(
+                    media=InputMediaPhoto(photo, caption=caption, parse_mode='Markdown'),
+                    reply_markup=reply_markup
+                )
+            else:
+                # Если нет фото, отправляем новое сообщение
+                await query.message.reply_photo(
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=reply_markup,
+                    parse_mode='Markdown'
+                )
+    except FileNotFoundError:
+        # Если изображение не найдено, отправляем текстовое сообщение
+        await query.edit_message_text(
+            f"❌ Изображение карточки не найдено!\n\n{caption}",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+
+# Обработчик навигации
+async def handle_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    action = query.data
+    user_data = context.user_data
+    
+    if "current_card_index" not in user_data or "rarity_cards" not in user_data:
+        await query.edit_message_text("❌ Сессия просмотра истекла. Используйте /inventory снова.")
+        return
+    
+    current_index = user_data["current_card_index"]
+    total_cards = len(user_data["rarity_cards"])
+    
+    if action == "nav_prev":
+        user_data["current_card_index"] = (current_index - 1) % total_cards
+    elif action == "nav_next":
+        user_data["current_card_index"] = (current_index + 1) % total_cards
+    elif action == "back_to_rarities":
+        await show_inventory_from_callback(query, context)
+        return
+    
+    await show_card_navigation(query, context)
+
+# Возврат к выбору редкости из callback
+async def show_inventory_from_callback(query, context):
+    user_id = str(query.from_user.id)
+    user_data = load_user_data()
+    
+    if user_id not in user_data or not user_data[user_id]["inventory"]:
+        await query.edit_message_text("📭 Ваша коллекция пуста!\nИспользуйте /getcard чтобы получить первую карточку.")
+        return
+    
+    inventory = user_data[user_id]["inventory"]
+    total_points = user_data[user_id]["total_points"]
+    
+    # Считаем карточки по редкостям
+    rarity_count = {}
+    for card in inventory:
+        rarity = card["rarity"]
+        rarity_count[rarity] = rarity_count.get(rarity, 0) + 1
+    
+    # Создаем клавиатуру с редкостями
+    keyboard = []
+    for rarity in RARITY_GROUPS:
+        if rarity in rarity_count and rarity_count[rarity] > 0:
+            emoji = RARITY_GROUPS[rarity]["emoji"]
+            count = rarity_count[rarity]
+            keyboard.append([InlineKeyboardButton(f"{emoji} {rarity} ({count})", callback_data=f"rarity_{rarity}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    stats_text = (
+        f"📊 **Ваша коллекция:**\n"
+        f"📚 Всего карточек: {len(inventory)}\n"
+        f"⭐ Всего очков: {total_points}\n\n"
+        f"🎲 **Выберите редкость для просмотра:**"
+    )
+    
+    await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
 
 # Команда /promo
 async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -500,11 +681,18 @@ if __name__ == "__main__":
     load_promo_data()
 
     application = Application.builder().token(BOT_TOKEN).build()
+    
+    # Обработчики команд
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("getcard", get_card))
     application.add_handler(CommandHandler("inventory", show_inventory))
     application.add_handler(CommandHandler("rarities", show_rarities))
     application.add_handler(CommandHandler("promo", use_promo))
+    
+    # Обработчики callback-ов для инвентаря
+    application.add_handler(CallbackQueryHandler(show_rarity_cards, pattern="^rarity_"))
+    application.add_handler(CallbackQueryHandler(handle_navigation, pattern="^nav_"))
+    application.add_handler(CallbackQueryHandler(show_inventory_from_callback, pattern="^back_to_rarities$"))
     
     logger.info("Бот запущен на Railway...")
     application.run_polling()
