@@ -24,56 +24,85 @@ RARITY_GROUPS = {
         "emoji": "⚪",
         "cards": [
             {"id": 1, "name": "Бургер Кинг", "image": "cards/Common/card1.jpg", "points": 10},
-            {"id": 2, "name": "Служебное помещение", "image": "cards/Common/card1.1.jpg", "points": 10},
-            {"id": 3, "name": "Оператор опять нюхает", "image": "cards/Common/card1.2.jpg", "points": 10},
+            {"id": 1.1, "name": "Служебное помещение", "image": "cards/Common/card1.1.jpg", "points": 10},
+            {"id": 1.2, "name": "Оператор опять нюхает", "image": "cards/Common/card1.2.jpg", "points": 10},
+            {"id": 1.3, "name": "Костя", "image": "cards/Common/card1.3.jpg", "points": 10},
         ]
     },
     "Редкая": {
         "chance": 25,
         "emoji": "🟢",
         "cards": [
-            {"id": 4, "name": "Вкусно и точка", "image": "cards/Rare/card2.jpg", "points": 50},
-            {"id": 5, "name": "Два задрота", "image": "cards/Rare/card2.1.jpg", "points": 50},
+            {"id": 2, "name": "Вкусно и точка", "image": "cards/Rare/card2.jpg", "points": 50},
+            {"id": 2.1, "name": "Два задрота", "image": "cards/Rare/card2.1.jpg", "points": 50},
+            {"id": 2.2, "name": "Умный оператор в очках скачать обои", "image": "cards/Rare/card2.2.jpg", "points": 50},
+            {"id": 2.3, "name": "Костя Водолаз", "image": "cards/Rare/card2.3.jpg", "points": 50},
+            {"id": 2.4, "name": "Михаил Динозавр", "image": "cards/Rare/card2.4.jpg", "points": 50},
+            {"id": 2.5, "name": "Михаил Мевдед", "image": "cards/Rare/card2.5.jpg", "points": 50},
         ]
     },
     "Сверхредкая": {
         "chance": 15,
         "emoji": "🔵",
         "cards": [
-            {"id": 7, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
-            {"id": 8, "name": "УВЗ", "image": "cards/SuperRare/card3.1.jpg", "points": 200},
+            {"id": 3, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
+            {"id": 3.1, "name": "УВЗ", "image": "cards/SuperRare/card3.1.jpg", "points": 200},
+            {"id": 3.2, "name": "Чижик", "image": "cards/SuperRare/card3.2.jpg", "points": 200},
+            {"id": 3.3, "name": "Фикс в Прайме", "image": "cards/SuperRare/card3.3.jpg", "points": 200},
+            {"id": 3.4, "name": "Гоша", "image": "cards/SuperRare/card3.4.jpg", "points": 200},
+            {"id": 3.5, "name": "Оператор у зеркала", "image": "cards/SuperRare/card3.5.jpg", "points": 200},
         ]
     },
     "Эпическая": {
         "chance": 10,
         "emoji": "🟣",
         "cards": [
-            {"id": 10, "name": "Михаил Динозавр", "image": "cards/Epic/card4.jpg", "points": 1000},
-            {"id": 11, "name": "Стёпа Автомобилист", "image": "cards/Epic/card4.1.jpg", "points": 1000},
+            {"id": 4, "name": "Михаил Динозавр", "image": "cards/Epic/card4.jpg", "points": 1000},
+            {"id": 4.1, "name": "Стёпа Автомобилист", "image": "cards/Epic/card4.1.jpg", "points": 1000},
+            {"id": 4.2, "name": "Димоооон", "image": "cards/Epic/card4.2.jpg", "points": 1000},
+            {"id": 4.3, "name": "Весёлый Михаил Медведь", "image": "cards/Epic/card4.3.jpg", "points": 1000},
+            {"id": 4.4, "name": "Грустный Тимофей", "image": "cards/Epic/card4.4.jpg", "points": 1000},
+            {"id": 4.5, "name": "Вёселый Тимофей", "image": "cards/Epic/card4.5.jpg", "points": 1000},
         ]
     },
     "Мифическая": {
         "chance": 7,
         "emoji": "🔴",
         "cards": [
-            {"id": 13, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
-            {"id": 14, "name": "Гриша Шалун", "image": "cards/Mythic/card5.1.jpg", "points": 5000},
-            {"id": 15, "name": "ЕВРАЗ", "image": "cards/Mythic/card5.2.jpg", "points": 5000},
+            {"id": 5, "name": "Сигма Михаил Медведь", "image": "cards/Mythic/card5.jpg", "points": 5000},
+            {"id": 5.1, "name": "Гриша Шалун", "image": "cards/Mythic/card5.1.jpg", "points": 5000},
+            {"id": 5.2, "name": "ЕВРАЗ", "image": "cards/Mythic/card5.2.jpg", "points": 5000},
+            {"id": 5.3, "name": "Счастливый оператор", "image": "cards/Mythic/card5.3.jpg", "points": 5000},
+            {"id": 5.4, "name": "Михаил Чикатило", "image": "cards/Mythic/card5.4.jpg", "points": 5000},
+            {"id": 5.5, "name": "Миша Combination 2", "image": "cards/Mythic/card5.5.jpg", "points": 5000},
+            {"id": 5.6, "name": "Ваня Макака", "image": "cards/Mythic/card5.6.jpg", "points": 5000},
         ]
     },
     "Легендарная": {
         "chance": 3,
         "emoji": "🟡",
         "cards": [
-            {"id": 16, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
+            {"id": 6, "name": "Стёпа с фанатами", "image": "cards/Legendary/card6.jpg", "points": 10000},
+            {"id": 6.1, "name": "Тимофей и Ваня", "image": "cards/Legendary/card6.1.jpg", "points": 10000},
+            {"id": 6.2, "name": "Михаил Мевдедь после сорев", "image": "cards/Legendary/card6.2.jpg", "points": 10000},
+            {"id": 6.3, "name": "Оператор с цветочком", "image": "cards/Legendary/card6.3.jpg", "points": 10000},
+            {"id": 6.4, "name": "Бульба Мен", "image": "cards/Legendary/card6.4.jpg", "points": 10000},
+            {"id": 6.5, "name": "Белох", "image": "cards/Legendary/card6.5.jpg", "points": 10000},
+            {"id": 6.6, "name": "Миша Combination", "image": "cards/Legendary/card6.6.jpg", "points": 10000},
+            {"id": 6.7, "name": "Михаил Медвед на соревах", "image": "cards/Legendary/card6.7.jpg", "points": 10000},
         ]
     },
     "Секретная": {
         "chance": 1,
         "emoji": "⚫️",
         "cards": [
-            {"id": 17, "name": "Который час?", "image": "cards/Secret/card7.jpg", "points": 20000},
-            {"id": 18, "name": "Держатель яиц Ярик", "image": "cards/Secret/card7.1.jpg", "points": 30000},
+            {"id": 7, "name": "Который час?", "image": "cards/Secret/card7.jpg", "points": 20000},
+            {"id": 7.1, "name": "Держатель яиц Ярик", "image": "cards/Secret/card7.1.jpg", "points": 20000},
+            {"id": 7.2, "name": "Кефас", "image": "cards/Secret/card7.2.jpg", "points": 20000},
+            {"id": 7.3, "name": "Владелец Кефаса", "image": "cards/Secret/card7.3.jpg", "points": 20000},
+            {"id": 7.4, "name": "Стёпа жуёт шапочку", "image": "cards/Secret/card7.4.jpg", "points": 20000},
+            {"id": 7.5, "name": "Владелец Бургер Кинга", "image": "cards/Secret/card7.5.jpg", "points": 20000},
+            {"id": 7.6, "name": "Михаил Медведь купил Нигерию", "image": "cards/Secret/card7.6.jpg", "points": 20000},
         ]
     },
 }
