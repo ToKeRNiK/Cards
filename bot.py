@@ -61,7 +61,7 @@ RARITY_GROUPS = {
         "cards": [
             {"id": 4, "name": "Михаил Динозавр", "image": "cards/Epic/card4.jpg", "points": 1000},
             {"id": 4.1, "name": "Стёпа Автомобилист", "image": "cards/Epic/card4.1.jpg", "points": 1000},
-            {"id": 4.2, "name": "Димоооон", "image": "cards/Epic/card4.2.jpg", "points": 1000},
+            {"id": 4.2, "name": "Киммих mentality", "image": "cards/Epic/card4.2.jpg", "points": 1000},
             {"id": 4.3, "name": "Весёлый Михаил Медведь", "image": "cards/Epic/card4.3.jpg", "points": 1000},
             {"id": 4.4, "name": "Грустный Тимофей", "image": "cards/Epic/card4.4.jpg", "points": 1000},
             {"id": 4.5, "name": "Вёселый Тимофей", "image": "cards/Epic/card4.5.jpg", "points": 1000},
@@ -114,6 +114,45 @@ RARITY_GROUPS = {
     },
 }
 
+# Промокоды
+PROMOCODES = {
+    "secret23gifting": {
+        "type": "random_rarity",
+        "rarity": "Секретная",
+        "uses_left": 1,
+        "max_uses": 1,
+        "description": "Случайная секретная карта"
+    },
+    "legendary24gifting": {
+        "type": "random_rarity", 
+        "rarity": "Легендарная",
+        "uses_left": 1,
+        "max_uses": 1,
+        "description": "Случайная легендарная карта"
+    },
+    "yarikgivt2025": {
+        "type": "specific_card",
+        "card_id": 7.1,
+        "uses_left": 1,
+        "max_uses": 1,
+        "description": "Держатель яиц Ярик"
+    },
+    "halakefasiche4327": {
+        "type": "specific_card",
+        "card_id": 7.2,
+        "uses_left": 3,
+        "max_uses": 3,
+        "description": "Кефас"
+    },
+    "stem27onixfree": {
+        "type": "specific_card", 
+        "card_id": 7.7,
+        "uses_left": 5,
+        "max_uses": 5,
+        "description": "twenty-seven"
+    }
+}
+
 # Загрузка данных пользователей
 def load_user_data():
     try:
@@ -125,6 +164,20 @@ def load_user_data():
 
 def save_user_data(data):
     with open('user_data.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+# Загрузка данных промокодов
+def load_promo_data():
+    try:
+        with open('promo_data.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.info("promo_data.json не найден, создаю новый с начальными значениями")
+        save_promo_data(PROMOCODES)
+        return PROMOCODES.copy()
+
+def save_promo_data(data):
+    with open('promo_data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # Получение случайной карточки
@@ -151,6 +204,51 @@ def get_random_card():
     
     return card
 
+# Получение карточки по ID
+def get_card_by_id(card_id):
+    for rarity_group in RARITY_GROUPS.values():
+        for card in rarity_group["cards"]:
+            if card["id"] == card_id:
+                card["rarity"] = next(r for r, rg in RARITY_GROUPS.items() if card in rg["cards"])
+                card["emoji"] = RARITY_GROUPS[card["rarity"]]["emoji"]
+                return card
+    return None
+
+# Получение случайной карточки определенной редкости
+def get_random_card_by_rarity(target_rarity):
+    if target_rarity not in RARITY_GROUPS:
+        return None
+    
+    cards_in_rarity = RARITY_GROUPS[target_rarity]["cards"]
+    card = random.choice(cards_in_rarity)
+    
+    card["rarity"] = target_rarity
+    card["emoji"] = RARITY_GROUPS[target_rarity]["emoji"]
+    card["rarity_chance"] = RARITY_GROUPS[target_rarity]["chance"]
+    
+    return card
+
+# Добавление карточки пользователю
+def add_card_to_user(user_id, card):
+    user_data = load_user_data()
+    
+    if user_id not in user_data:
+        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
+    
+    user_data[user_id]["inventory"].append({
+        "card_id": card["id"],
+        "name": card["name"],
+        "rarity": card["rarity"],
+        "points": card["points"],
+        "acquired": datetime.now(timezone.utc).isoformat(),
+        "from_promo": True  # Помечаем что карта из промокода
+    })
+    
+    user_data[user_id]["total_points"] += card["points"]
+    save_user_data(user_data)
+    
+    logger.info(f"User {user_id} received card from promo: {card['name']}")
+
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rarity_info = "🎲 **Шансы редкостей:**\n"
@@ -165,7 +263,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📖 **Доступные команды:**\n"
         "/getcard - Получить случайную карточку\n"
         "/inventory - Показать вашу коллекцию\n"
-        "/rarities - Информация о редкостях\n\n"
+        "/rarities - Информация о редкостях\n"
+        "/promo <код> - Активировать промокод\n\n"
         f"⏰ **Кулдаун:** {COOLDOWN_MINUTES} минут\n\n"
         f"{rarity_info}",
         parse_mode='Markdown'
@@ -243,7 +342,7 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Ошибка: изображение {card['image']} не найдено")
 
     if user_id not in user_data:
-        user_data[user_id] = {"inventory": [], "total_points": 0}
+        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
     
     user_data[user_id]["inventory"].append({
         "card_id": card["id"],
@@ -289,9 +388,98 @@ async def show_inventory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recent_cards = inventory[-5:]
     for card in recent_cards:
         emoji = RARITY_GROUPS[card["rarity"]]["emoji"]
-        stats_text += f"{emoji} {card['name']} ({card['points']} очков)\n"
+        promo_mark = " 🎁" if card.get("from_promo") else ""
+        stats_text += f"{emoji} {card['name']} ({card['points']} очков){promo_mark}\n"
     
     await update.message.reply_text(stats_text, parse_mode='Markdown')
+
+# Команда /promo
+async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if not context.args:
+        await update.message.reply_text(
+            "🎟️ **Использование промокода:**\n"
+            "Введите /promo <код>\n\n"
+            "Пример: /promo secret23gifting"
+        )
+        return
+    
+    promo_code = context.args[0].lower()
+    promo_data = load_promo_data()
+    user_data = load_user_data()
+    
+    # Инициализация данных пользователя если нужно
+    if user_id not in user_data:
+        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
+    
+    # Проверка использованных промокодов
+    if "used_promocodes" not in user_data[user_id]:
+        user_data[user_id]["used_promocodes"] = []
+    
+    # Проверяем использовал ли пользователь уже этот промокод
+    if promo_code in user_data[user_id]["used_promocodes"]:
+        await update.message.reply_text("❌ Вы уже использовали этот промокод!")
+        return
+    
+    # Проверка существования промокода
+    if promo_code not in promo_data:
+        await update.message.reply_text("❌ Неверный промокод!")
+        return
+    
+    promo = promo_data[promo_code]
+    
+    # Проверка оставшихся использований
+    if promo["uses_left"] <= 0:
+        await update.message.reply_text("❌ Промокод больше не действителен!")
+        return
+    
+    # Обработка промокода
+    if promo["type"] == "random_rarity":
+        card = get_random_card_by_rarity(promo["rarity"])
+        if not card:
+            await update.message.reply_text("❌ Ошибка при получении карты!")
+            return
+    elif promo["type"] == "specific_card":
+        card = get_card_by_id(promo["card_id"])
+        if not card:
+            await update.message.reply_text("❌ Ошибка при получении карты!")
+            return
+    else:
+        await update.message.reply_text("❌ Неизвестный тип промокода!")
+        return
+    
+    # Отправка карточки
+    caption = (
+        f"🎁 **Вы активировали промокод!**\n"
+        f"🎴 **Получена карточка:** {card['name']}\n"
+        f"{card['emoji']} **Редкость:** {card['rarity']}\n"
+        f"⭐ **Очки:** {card['points']}\n"
+        f"🎟️ Промокод: {promo_code}"
+    )
+    
+    try:
+        with open(card['image'], 'rb') as photo:
+            await update.message.reply_photo(photo=photo, caption=caption, parse_mode='Markdown')
+    except FileNotFoundError:
+        await update.message.reply_text(f"❌ Ошибка: изображение {card['image']} не найдено")
+        return
+    
+    # Обновление данных
+    promo_data[promo_code]["uses_left"] -= 1
+    save_promo_data(promo_data)
+    
+    user_data[user_id]["used_promocodes"].append(promo_code)
+    add_card_to_user(user_id, card)
+    
+    # Информация об остатке использований
+    uses_left = promo_data[promo_code]["uses_left"]
+    if uses_left > 0:
+        uses_info = f"Осталось использований: {uses_left}/{promo['max_uses']}"
+    else:
+        uses_info = "Промокод полностью использован!"
+    
+    await update.message.reply_text(f"✅ Промокод успешно активирован!\n{uses_info}")
 
 if __name__ == "__main__":
     # Проверка существования карточек
@@ -305,11 +493,15 @@ if __name__ == "__main__":
     if total_chance != 100:
         logger.warning(f"Total chance is {total_chance}% (should be 100%)")
 
+    # Загрузка данных промокодов при старте
+    load_promo_data()
+
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("getcard", get_card))
     application.add_handler(CommandHandler("inventory", show_inventory))
     application.add_handler(CommandHandler("rarities", show_rarities))
+    application.add_handler(CommandHandler("promo", use_promo))
     
     logger.info("Бот запущен на Railway...")
     application.run_polling()
