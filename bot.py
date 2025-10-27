@@ -173,7 +173,7 @@ PROMOCODES = {
         "max_uses": 1,
         "description": "Держатель яиц Ярик"
     },
-    "KotoriyHour?2025": {
+    "kotoriyhour2025": {
         "type": "specific_card",
         "card_id": 7,
         "uses_left": 5,
