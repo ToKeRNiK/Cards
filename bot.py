@@ -201,13 +201,6 @@ PROMOCODES = {
         "max_uses": 10,
         "description": "Случайная карточка из события Казань"
     },
-    "mamashamarka1488": {
-        "type": "random_rarity",
-        "rarity": "Редкая",
-        "uses_left": 10,
-        "max_uses": 10,
-        "description": "Случайная редкая карта"
-    },
 }
 
 # Функции для работы с базой данных
