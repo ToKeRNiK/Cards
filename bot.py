@@ -176,8 +176,8 @@ PROMOCODES = {
     "kotoriyhour2025": {
         "type": "specific_card",
         "card_id": 7,
-        "uses_left": 5,
-        "max_uses": 5,
+        "uses_left": 1,
+        "max_uses": 1,
         "description": "Который час?"
     },
     "halakefasiche4327": {
@@ -200,6 +200,13 @@ PROMOCODES = {
         "uses_left": 10,
         "max_uses": 10,
         "description": "Случайная карточка из события Казань"
+    },
+    "mamashamarka1488": {
+        "type": "random_rarity",
+        "rarity": "Редкая",
+        "uses_left": 10,
+        "max_uses": 10,
+        "description": "Случайная редкая карта"
     },
 }
 
