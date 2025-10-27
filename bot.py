@@ -2,9 +2,11 @@ import os
 import json
 import random
 import logging
+import psycopg2
 from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
+from psycopg2.extras import RealDictCursor
 
 # Настройка логирования
 logging.basicConfig(
@@ -13,9 +15,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Конфигурация - получаем токен из переменных окружения Railway
+# Конфигурация - получаем данные из переменных окружения Railway
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8295319122:AAFGvZ1GFqPv8EkCTQnXjSKzd4dOG8rz1bg')
 COOLDOWN_MINUTES = 5
+
+# Настройки базы данных
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:GjvKELSoRVzbyXCnxEMBdWvOTiCvufbs@postgres.railway.internal:5432/railway')
 
 # Временное событие "Казань"
 EVENT_CONFIG = {
@@ -168,6 +173,13 @@ PROMOCODES = {
         "max_uses": 1,
         "description": "Держатель яиц Ярик"
     },
+    "KotoriyHour?2025": {
+        "type": "specific_card",
+        "card_id": 7,
+        "uses_left": 1,
+        "max_uses": 1,
+        "description": "Который час?"
+    },
     "halakefasiche4327": {
         "type": "specific_card",
         "card_id": 7.2,
@@ -191,32 +203,196 @@ PROMOCODES = {
     },
 }
 
-# Загрузка данных пользователей
+# Функции для работы с базой данных
+def get_db_connection():
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    return conn
+
+def init_db():
+    """Инициализация базы данных"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Таблица пользователей
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            inventory JSONB,
+            total_points INTEGER DEFAULT 0,
+            last_used TIMESTAMP WITH TIME ZONE,
+            used_promocodes JSONB
+        )
+    ''')
+    
+    # Таблица промокодов
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS promocodes (
+            code TEXT PRIMARY KEY,
+            type TEXT NOT NULL,
+            rarity TEXT,
+            card_id REAL,
+            event_name TEXT,
+            uses_left INTEGER,
+            max_uses INTEGER,
+            description TEXT
+        )
+    ''')
+    
+    # Таблица использованных промокодов
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS used_promocodes (
+            user_id TEXT,
+            promo_code TEXT,
+            used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            PRIMARY KEY (user_id, promo_code)
+        )
+    ''')
+    
+    # Инициализация промокодов
+    for code, data in PROMOCODES.items():
+        cur.execute('''
+            INSERT INTO promocodes (code, type, rarity, card_id, event_name, uses_left, max_uses, description)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (code) DO UPDATE SET
+                uses_left = EXCLUDED.uses_left
+        ''', (
+            code,
+            data["type"],
+            data.get("rarity"),
+            data.get("card_id"),
+            data.get("event"),
+            data["uses_left"],
+            data["max_uses"],
+            data["description"]
+        ))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def load_user_data():
-    try:
-        with open('user_data.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logger.info("user_data.json не найден, создаю новый файл")
-        return {}
+    """Загрузка всех пользователей из базы данных"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cur.execute('SELECT * FROM users')
+    users = cur.fetchall()
+    
+    user_data = {}
+    for user in users:
+        user_data[user['user_id']] = {
+            "inventory": user['inventory'] or [],
+            "total_points": user['total_points'] or 0,
+            "last_used": user['last_used'].isoformat() if user['last_used'] else None,
+            "used_promocodes": user['used_promocodes'] or []
+        }
+    
+    cur.close()
+    conn.close()
+    return user_data
 
 def save_user_data(data):
-    with open('user_data.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    """Сохранение данных пользователя в базу данных"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    for user_id, user_info in data.items():
+        cur.execute('''
+            INSERT INTO users (user_id, inventory, total_points, last_used, used_promocodes)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE SET
+                inventory = EXCLUDED.inventory,
+                total_points = EXCLUDED.total_points,
+                last_used = EXCLUDED.last_used,
+                used_promocodes = EXCLUDED.used_promocodes
+        ''', (
+            user_id,
+            json.dumps(user_info["inventory"]),
+            user_info["total_points"],
+            user_info["last_used"],
+            json.dumps(user_info.get("used_promocodes", []))
+        ))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
 
-# Загрузка данных промокодов
 def load_promo_data():
-    try:
-        with open('promo_data.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logger.info("promo_data.json не найден, создаю новый с начальными значениями")
-        save_promo_data(PROMOCODES)
-        return PROMOCODES.copy()
+    """Загрузка данных промокодов из базы данных"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cur.execute('SELECT * FROM promocodes')
+    promos = cur.fetchall()
+    
+    promo_data = {}
+    for promo in promos:
+        promo_data[promo['code']] = {
+            "type": promo['type'],
+            "rarity": promo['rarity'],
+            "card_id": promo['card_id'],
+            "event": promo['event_name'],
+            "uses_left": promo['uses_left'],
+            "max_uses": promo['max_uses'],
+            "description": promo['description']
+        }
+    
+    cur.close()
+    conn.close()
+    return promo_data
 
 def save_promo_data(data):
-    with open('promo_data.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    """Сохранение данных промокодов в базу данных"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    for code, promo_info in data.items():
+        cur.execute('''
+            INSERT INTO promocodes (code, type, rarity, card_id, event_name, uses_left, max_uses, description)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (code) DO UPDATE SET
+                uses_left = EXCLUDED.uses_left
+        ''', (
+            code,
+            promo_info["type"],
+            promo_info.get("rarity"),
+            promo_info.get("card_id"),
+            promo_info.get("event"),
+            promo_info["uses_left"],
+            promo_info["max_uses"],
+            promo_info["description"]
+        ))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def has_user_used_promo(user_id, promo_code):
+    """Проверка, использовал ли пользователь промокод"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute('SELECT 1 FROM used_promocodes WHERE user_id = %s AND promo_code = %s', (user_id, promo_code))
+    result = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+    return result is not None
+
+def mark_promo_used(user_id, promo_code):
+    """Пометить промокод как использованный пользователем"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute('''
+        INSERT INTO used_promocodes (user_id, promo_code)
+        VALUES (%s, %s)
+        ON CONFLICT (user_id, promo_code) DO NOTHING
+    ''', (user_id, promo_code))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
 
 # Проверка активности события
 def is_event_active():
@@ -321,7 +497,7 @@ def add_card_to_user(user_id, card):
     user_data = load_user_data()
     
     if user_id not in user_data:
-        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
+        user_data[user_id] = {"inventory": [], "total_points": 0, "last_used": None, "used_promocodes": []}
     
     user_data[user_id]["inventory"].append({
         "card_id": card["id"],
@@ -504,7 +680,7 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Ошибка: изображение {card['image']} не найдено")
 
     if user_id not in user_data:
-        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
+        user_data[user_id] = {"inventory": [], "total_points": 0, "last_used": None, "used_promocodes": []}
     
     user_data[user_id]["inventory"].append({
         "card_id": card["id"],
@@ -772,14 +948,14 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Инициализация данных пользователя если нужно
     if user_id not in user_data:
-        user_data[user_id] = {"inventory": [], "total_points": 0, "used_promocodes": []}
+        user_data[user_id] = {"inventory": [], "total_points": 0, "last_used": None, "used_promocodes": []}
     
     # Проверка использованных промокодов
     if "used_promocodes" not in user_data[user_id]:
         user_data[user_id]["used_promocodes"] = []
     
-    # Проверяем использовал ли пользователь уже этот промокод
-    if promo_code in user_data[user_id]["used_promocodes"]:
+    # Проверяем использовал ли пользователь уже этот промокод (в базе данных)
+    if has_user_used_promo(user_id, promo_code):
         await update.message.reply_text("❌ Вы уже использовали этот промокод!")
         return
     
@@ -841,7 +1017,10 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     promo_data[promo_code]["uses_left"] -= 1
     save_promo_data(promo_data)
     
-    user_data[user_id]["used_promocodes"].append(promo_code)
+    # Помечаем промокод как использованный для этого пользователя
+    mark_promo_used(user_id, promo_code)
+    
+    # Добавляем карточку пользователю
     add_card_to_user(user_id, card)
     
     # Информация об остатке использований
@@ -854,6 +1033,9 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Промокод успешно активирован!\n{uses_info}")
 
 if __name__ == "__main__":
+    # Инициализация базы данных
+    init_db()
+    
     # Проверка существования карточек
     for rarity, data in RARITY_GROUPS.items():
         for card in data["cards"]:
