@@ -171,21 +171,21 @@ PROMOCODES = {
     "halakefasiche4327": {
         "type": "specific_card",
         "card_id": 7.2,
-        "uses_left": 1,
+        "uses_left": 3,
         "max_uses": 3,
         "description": "Кефас"
     },
     "stem27onixfree": {
         "type": "specific_card", 
         "card_id": 7.7,
-        "uses_left": 1,
+        "uses_left": 5,
         "max_uses": 5,
         "description": "twenty-seven"
     },
     "kazanrandom2025": {
         "type": "random_event",
         "event": "Казань",
-        "uses_left": 1,
+        "uses_left": 10,
         "max_uses": 10,
         "description": "Случайная карточка из события Казань"
     },
