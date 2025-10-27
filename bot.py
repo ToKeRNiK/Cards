@@ -176,8 +176,8 @@ PROMOCODES = {
     "KotoriyHour?2025": {
         "type": "specific_card",
         "card_id": 7,
-        "uses_left": 1,
-        "max_uses": 1,
+        "uses_left": 5,
+        "max_uses": 5,
         "description": "Который час?"
     },
     "halakefasiche4327": {
