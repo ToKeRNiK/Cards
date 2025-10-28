@@ -1104,10 +1104,12 @@ if __name__ == "__main__":
             if not os.path.exists(card['image']):
                 logger.warning(f"Event image not found: {card['image']}")
     
-    # Проверка суммы шансов
-    total_chance = sum(data["chance"] for data in RARITY_GROUPS.values())
-    if total_chance != 100:
-        logger.warning(f"Total chance is {total_chance}% (should be 100%)")
+    # ИСПРАВЛЕННАЯ ПРОВЕРКА СУММЫ ШАНСОВ
+    total_base_chance = sum(data["base_chance"] for data in RARITY_GROUPS.values())
+    if abs(total_base_chance - 100.0) > 0.1:  # Допускаем небольшую погрешность из-за округления
+        logger.warning(f"Total base chance is {total_base_chance}% (should be 100%)")
+    else:
+        logger.info(f"Total base chance: {total_base_chance}% (correct)")
 
     # Проверка события
     if is_event_active():
