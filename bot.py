@@ -59,10 +59,10 @@ RARITY_GROUPS = {
             {"id": 3.1, "name": "УВЗ", "image": "cards/SuperRare/card3.1.jpg", "points": 200},
             {"id": 3.2, "name": "Чижик", "image": "cards/SuperRare/card3.2.jpg", "points": 200},
             {"id": 3.3, "name": "Фикс в Прайме", "image": "cards/SuperRare/card3.3.jpg", "points": 200},
-            {"id": 3.4, "name": "Гоша", "image": "cards/SuperRare/card3.4.jpg", "points": 200},
+            {"id": 3.4, "name": "Клубничная кремка", "image": "cards/SuperRare/card3.4.jpg", "points": 200},
             {"id": 3.5, "name": "Оператор у зеркала", "image": "cards/SuperRare/card3.5.jpg", "points": 200},
             {"id": 3.6, "name": "Молочная кремка", "image": "cards/SuperRare/card3.6.jpg", "points": 200},
-            {"id": 3.7, "name": "Клубничная кремка", "image": "cards/SuperRare/card3.7.jpg", "points": 200},
+            {"id": 3.7, "name": "Свинья", "image": "cards/SuperRare/card3.7.jpg", "points": 200},
         ]
     },
     "Эпическая": {
@@ -79,6 +79,7 @@ RARITY_GROUPS = {
             {"id": 4.6, "name": "Мирослав и королевские кабаны", "image": "cards/Epic/card4.6.jpg", "points": 1000},
             {"id": 4.7, "name": "Кремка с морской солью", "image": "cards/Epic/card4.7.jpg", "points": 1000},
             {"id": 4.8, "name": "Вкусно и точка", "image": "cards/Epic/card4.8.jpg", "points": 1000},
+            {"id": 4.9, "name": "Шапочка для плавания", "image": "cards/Epic/card4.9.jpg", "points": 1000},
         ]
     },
     "Мифическая": {
@@ -95,6 +96,7 @@ RARITY_GROUPS = {
             {"id": 5.6, "name": "Ваня Макака", "image": "cards/Mythic/card5.6.jpg", "points": 5000},
             {"id": 5.7, "name": "Мирослав с автоматом", "image": "cards/Mythic/card5.7.jpg", "points": 5000},
             {"id": 5.8, "name": "Кофейная кремка", "image": "cards/Mythic/card5.8.jpg", "points": 5000},
+            {"id": 5.9, "name": "Миша Медведь на ОБЖ", "image": "cards/Mythic/card5.9.jpg", "points": 5000},
         ]
     },
     "Легендарная": {
@@ -107,10 +109,11 @@ RARITY_GROUPS = {
             {"id": 6.2, "name": "Михаил Мевдедь после сорев", "image": "cards/Legendary/card6.2.jpg", "points": 10000},
             {"id": 6.3, "name": "Оператор с цветочком", "image": "cards/Legendary/card6.3.jpg", "points": 10000},
             {"id": 6.4, "name": "Бульба Мен", "image": "cards/Legendary/card6.4.jpg", "points": 10000},
-            {"id": 6.5, "name": "Белох", "image": "cards/Legendary/card6.5.jpg", "points": 10000},
+            {"id": 6.5, "name": "Казанский Таракан", "image": "cards/Legendary/card6.5.jpg", "points": 10000},
             {"id": 6.6, "name": "Миша Combination", "image": "cards/Legendary/card6.6.jpg", "points": 10000},
             {"id": 6.7, "name": "Михаил Медвед на соревах", "image": "cards/Legendary/card6.7.jpg", "points": 10000},
-            {"id": 6.8, "name": "Казанский Таракан", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
+            {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
+            {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
         ]
     },
     "Секретная": {
@@ -126,6 +129,7 @@ RARITY_GROUPS = {
             {"id": 7.5, "name": "Владелец Бургер Кинга", "image": "cards/Secret/card7.5.jpg", "points": 20000},
             {"id": 7.6, "name": "Михаил Медведь купил Нигерию", "image": "cards/Secret/card7.6.jpg", "points": 20000},
             {"id": 7.7, "name": "twenty-seven", "image": "cards/Secret/card7.7.jpg", "points": 20000},
+            {"id": 7.8, "name": "Марк в розовой машине", "image": "cards/Secret/card7.8.jpg", "points": 20000},
         ]
     },
     "Эксклюзивная": {
@@ -135,6 +139,7 @@ RARITY_GROUPS = {
         "cards": [
             {"id": 8, "name": "Миши в поезде", "image": "cards/Exclusive/card8.jpg", "points": 50000},
             {"id": 8.1, "name": "Миши в Туапсе", "image": "cards/Exclusive/card8.1.jpg", "points": 50000},
+            {"id": 8.2, "name": "Место спавна гадостей", "image": "cards/Exclusive/card8.2.jpg", "points": 50000},
         ]
     },
 }
