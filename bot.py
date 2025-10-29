@@ -368,7 +368,7 @@ def init_db():
             total_points INTEGER DEFAULT 0,
             last_used TIMESTAMP WITH TIME ZONE,
             used_promocodes JSONB,
-            daily_streak INTEGER DEFAULT 0,
+            daily_streak INTEGER DEFAULT 0,  # Убедитесь, что это правильное имя
             last_daily TIMESTAMP WITH TIME ZONE,
             profile_data JSONB
         )
@@ -449,9 +449,9 @@ def load_user_data():
             "total_points": user['total_points'] or 0,
             "last_used": user['last_used'].isoformat() if user['last_used'] else None,
             "used_promocodes": user['used_promocodes'] or [],
-            "daily_streak": user['daily_streak'] or 0,
-            "last_daily": user['last_daily'].isoformat() if user['last_daily'] else None,
-            "profile_data": user['profile_data'] or {"title": "Новичок", "frame": "Стандартная", "bio": ""}
+            "daily_streak": user.get('daily_streak', 0) or 0,  # Исправлено здесь
+            "last_daily": user['last_daily'].isoformat() if user.get('last_daily') else None,  # И здесь
+            "profile_data": user.get('profile_data') or {"title": "Новичок", "frame": "Стандартная", "bio": ""}
         }
     
     cur.close()
@@ -477,11 +477,11 @@ def save_user_data(data):
                 profile_data = EXCLUDED.profile_data
         ''', (
             user_id,
-            json.dumps(user_info["inventory"]),
-            user_info["total_points"],
-            user_info["last_used"],
+            json.dumps(user_info.get("inventory", [])),
+            user_info.get("total_points", 0),
+            user_info.get("last_used"),
             json.dumps(user_info.get("used_promocodes", [])),
-            user_info.get("daily_streak", 0),
+            user_info.get("daily_streak", 0),  # Исправлено здесь
             user_info.get("last_daily"),
             json.dumps(user_info.get("profile_data", {"title": "Новичок", "frame": "Стандартная", "bio": ""}))
         ))
@@ -982,7 +982,7 @@ async def daily_reward(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "total_points": 0, 
             "last_used": None, 
             "used_promocodes": [],
-            "daily_streak": 0,
+            "daily_streak": 0,  # Убедитесь, что это поле есть
             "last_daily": None,
             "profile_data": {"title": "Новичок", "frame": "Стандартная", "bio": ""}
         }
