@@ -114,7 +114,7 @@ RARITY_GROUPS = {
             {"id": 6.7, "name": "Михаил Медвед на соревах", "image": "cards/Legendary/card6.7.jpg", "points": 10000},
             {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
             {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
-            {"id": 6.10, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
+            {"id": 6.11, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
         ]
     },
     "Секретная": {
@@ -188,7 +188,7 @@ PROMOCODES = {
     },
     "rickgrimespeakedit": {
         "type": "specific_card",
-        "card_id": 6.10,
+        "card_id": 6.11,
         "uses_left": 2,
         "max_uses": 2,
         "description": "Рик Граймс"
