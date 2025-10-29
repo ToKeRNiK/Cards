@@ -186,7 +186,7 @@ PROMOCODES = {
         "max_uses": 1,
         "description": "Держатель яиц Ярик"
     },
-    "rickgrimespeakedit": {
+    "rickgrimespeakedit2025": {
         "type": "specific_card",
         "card_id": 6.11,
         "uses_left": 2,
