@@ -22,21 +22,41 @@ COOLDOWN_MINUTES = 5
 # Настройки базы данных
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:GjvKELSoRVzbyXCnxEMBdWvOTiCvufbs@postgres.railway.internal:5432/railway')
 
-# Временное событие "Казань"
-EVENT_CONFIG = {
-    "name": "Казань2025",
-    "active": True,  # Включить/выключить событие
-    "start_date": "2025-10-27",  # Дата начала события
-    "end_date": "2025-10-29",    # Дата окончания события
-    "emoji": "🏙️",
-    "chance": 8  # Шанс выпадения карточки события (8%)
+# ==================== КОНФИГУРАЦИЯ СОБЫТИЙ ====================
+# Чтобы добавить новое событие, просто добавьте его в EVENTS_CONFIG и EVENT_CARDS
+# Чтобы активировать событие, установите CURRENT_EVENT в ключ события
+
+# Конфигурация всех событий
+EVENTS_CONFIG = {
+    "Казань2025": {
+        "name": "Казань2025",
+        "key": "Казань",  # Уникальный ключ для идентификации
+        "active": False,  # Включить/выключить событие
+        "start_date": "2025-10-27",
+        "end_date": "2025-10-29", 
+        "emoji": "🏙️",
+        "chance": 8
+    },
+    "Хэллоуин2025": {
+        "name": "Хэллоуин2025", 
+        "key": "Хэллоуин",  # Уникальный ключ для идентификации
+        "active": True,  # Включить новое событие
+        "start_date": "2025-10-29",
+        "end_date": "2025-10-31",
+        "emoji": "🎃",
+        "chance": 8
+    }
 }
 
-# Группировка карточек по редкостям (шансы указаны от 92% основного пула)
+# Активное событие (измените эту переменную чтобы активировать другое событие)
+CURRENT_EVENT = "Хэллоуин2025"
+EVENT_CONFIG = EVENTS_CONFIG[CURRENT_EVENT]
+
+# ==================== ОСНОВНЫЕ КАРТОЧКИ ====================
 RARITY_GROUPS = {
     "Редкая": {
-        "base_chance": 30.1,  # Базовый шанс
-        "adjusted_chance": 27.692,  # Скорректированный шанс (30.1% от 92%)
+        "base_chance": 30.1,
+        "adjusted_chance": 27.692,
         "emoji": "🟢",
         "cards": [
             {"id": 2.1, "name": "Два задрота", "image": "cards/Rare/card2.1.jpg", "points": 50},
@@ -115,6 +135,7 @@ RARITY_GROUPS = {
             {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
             {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
             {"id": 6.11, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
+            {"id": 6.12, "name": "Рик Граймс", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
         ]
     },
     "Секретная": {
@@ -141,15 +162,16 @@ RARITY_GROUPS = {
             {"id": 8, "name": "Миши в поезде", "image": "cards/Exclusive/card8.jpg", "points": 50000},
             {"id": 8.1, "name": "Миши в Туапсе", "image": "cards/Exclusive/card8.1.jpg", "points": 50000},
             {"id": 8.2, "name": "Место спавна гадостей", "image": "cards/Exclusive/card8.2.jpg", "points": 50000},
+            {"id": 8.3, "name": "Президентский", "image": "cards/Exclusive/card8.3.jpg", "points": 50000},
         ]
     },
 }
 
-# Карточки события "Казань"
+# ==================== КАРТОЧКИ СОБЫТИЙ ====================
 EVENT_CARDS = {
     "Казань": {
-        "chance": EVENT_CONFIG["chance"],  # 8%
-        "emoji": EVENT_CONFIG["emoji"],
+        "chance": EVENTS_CONFIG["Казань2025"]["chance"],
+        "emoji": EVENTS_CONFIG["Казань2025"]["emoji"],
         "cards": [
             {"id": 9.1, "name": "Оператор в Казани", "image": "cards/Kazan/card9.1.jpg", "points": 25000},
             {"id": 9.2, "name": "Оператор в казанском самолёте", "image": "cards/Kazan/card9.2.jpg", "points": 25000},
@@ -160,10 +182,21 @@ EVENT_CARDS = {
             {"id": 9.7, "name": "'Видишь вон там вон дроны летят'", "image": "cards/Kazan/card9.7.jpg", "points": 25000},
             {"id": 9.8, "name": "Оператор оформил закид", "image": "cards/Kazan/card9.8.jpg", "points": 25000},
         ]
-    }
+    },
+    "Хэллоуин": {
+        "chance": EVENTS_CONFIG["Хэллоуин2025"]["chance"],
+        "emoji": EVENTS_CONFIG["Хэллоуин2025"]["emoji"],
+        "cards": [
+            {"id": 10.1, "name": "Хэллоуинский Миша Медведь", "image": "cards/Halloween/card10.1.jpg", "points": 30000},
+            {"id": 10.2, "name": "Хэллоуинский Ярик", "image": "cards/Halloween/card10.2.jpg", "points": 30000},
+            {"id": 10.3, "name": "Хэллоуинский Миша Динозавр", "image": "cards/Halloween/card10.3.jpg", "points": 30000},
+            {"id": 10.4, "name": "Хэллоуинский Оператор", "image": "cards/Halloween/card10.4.jpg", "points": 30000},
+            {"id": 10.5, "name": "Хэллоуинский Мини Литвин", "image": "cards/Halloween/card10.5.jpg", "points": 30000},
+        ]
+    },
 }
 
-# Промокоды
+# ==================== ПРОМОКОДЫ ====================
 PROMOCODES = {
     "secret23gifting": {
         "type": "random_rarity",
@@ -221,9 +254,16 @@ PROMOCODES = {
         "max_uses": 10,
         "description": "Случайная карточка из события Казань"
     },
+    "halloweenrandom2025": {
+        "type": "random_event",
+        "event": "Хэллоуин",
+        "uses_left": 10,
+        "max_uses": 10,
+        "description": "Случайная карточка из события Хэллоуин"
+    },
 }
 
-# Функции для работы с базой данных
+# ==================== БАЗА ДАННЫХ ====================
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     return conn
@@ -233,7 +273,6 @@ def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Таблица пользователей
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             user_id TEXT PRIMARY KEY,
@@ -244,7 +283,6 @@ def init_db():
         )
     ''')
     
-    # Таблица промокодов
     cur.execute('''
         CREATE TABLE IF NOT EXISTS promocodes (
             code TEXT PRIMARY KEY,
@@ -258,7 +296,6 @@ def init_db():
         )
     ''')
     
-    # Таблица использованных промокодов
     cur.execute('''
         CREATE TABLE IF NOT EXISTS used_promocodes (
             user_id TEXT,
@@ -268,7 +305,6 @@ def init_db():
         )
     ''')
     
-    # Инициализация промокодов
     for code, data in PROMOCODES.items():
         cur.execute('''
             INSERT INTO promocodes (code, type, rarity, card_id, event_name, uses_left, max_uses, description)
@@ -414,8 +450,9 @@ def mark_promo_used(user_id, promo_code):
     cur.close()
     conn.close()
 
-# Проверка активности события
+# ==================== СИСТЕМА СОБЫТИЙ ====================
 def is_event_active():
+    """Проверка активности текущего события"""
     if not EVENT_CONFIG["active"]:
         return False
     
@@ -429,46 +466,54 @@ def is_event_active():
         logger.error(f"Ошибка проверки события: {e}")
         return False
 
-# Получение всех доступных редкостей с правильным распределением шансов
-def get_available_rarities():
-    if is_event_active():
-        # Во время события: 8% на событие, 92% на основные редкости
-        available_rarities = {}
-        for rarity, data in RARITY_GROUPS.items():
-            available_rarities[rarity] = {
-                "chance": data["adjusted_chance"],  # Используем скорректированный шанс
-                "emoji": data["emoji"],
-                "cards": data["cards"]
-            }
-        # Добавляем событие с 8% шансом
-        available_rarities["Казань"] = EVENT_CARDS["Казань"]
-        return available_rarities
-    else:
-        # Без события: 100% на основные редкости
-        available_rarities = {}
-        for rarity, data in RARITY_GROUPS.items():
-            available_rarities[rarity] = {
-                "chance": data["base_chance"],  # Используем базовый шанс
-                "emoji": data["emoji"],
-                "cards": data["cards"]
-            }
-        return available_rarities
+def get_current_event_key():
+    """Получение ключа текущего события"""
+    return EVENT_CONFIG["key"]
 
-# Получение случайной карточки
+def get_available_rarities():
+    """Получение всех доступных редкостей с учетом активного события"""
+    available_rarities = {}
+    
+    # Основные редкости
+    for rarity, data in RARITY_GROUPS.items():
+        if is_event_active():
+            available_rarities[rarity] = {
+                "chance": data["adjusted_chance"],
+                "emoji": data["emoji"],
+                "cards": data["cards"]
+            }
+        else:
+            available_rarities[rarity] = {
+                "chance": data["base_chance"],
+                "emoji": data["emoji"],
+                "cards": data["cards"]
+            }
+    
+    # Добавляем активное событие
+    if is_event_active():
+        event_key = get_current_event_key()
+        if event_key in EVENT_CARDS:
+            available_rarities[event_key] = EVENT_CARDS[event_key]
+    
+    return available_rarities
+
 def get_random_card():
+    """Получение случайной карточки с учетом активного события"""
     available_rarities = get_available_rarities()
     
     # Сначала определяем, выпадет ли событийная карточка
     if is_event_active():
-        event_chance = EVENT_CONFIG["chance"]  # 8%
+        event_chance = EVENT_CONFIG["chance"]
         if random.random() * 100 < event_chance:
             # Выпадает событийная карточка
-            event_cards = EVENT_CARDS["Казань"]["cards"]
-            card = random.choice(event_cards)
-            card["rarity"] = "Казань"
-            card["emoji"] = EVENT_CARDS["Казань"]["emoji"]
-            card["rarity_chance"] = EVENT_CARDS["Казань"]["chance"]
-            return card
+            event_key = get_current_event_key()
+            if event_key in EVENT_CARDS:
+                event_cards = EVENT_CARDS[event_key]["cards"]
+                card = random.choice(event_cards)
+                card["rarity"] = event_key
+                card["emoji"] = EVENT_CARDS[event_key]["emoji"]
+                card["rarity_chance"] = EVENT_CARDS[event_key]["chance"]
+                return card
     
     # Если событие не активно или не выпала событийная карта, выбираем из основных редкостей
     roll = random.random() * 100
@@ -476,7 +521,8 @@ def get_random_card():
     
     selected_rarity = None
     for rarity, data in available_rarities.items():
-        if rarity == "Казань":  # Пропускаем событие, так как его уже обработали
+        # Пропускаем событийные редкости
+        if is_event_active() and rarity == get_current_event_key():
             continue
         current += data["chance"]
         if roll <= current:
@@ -484,8 +530,8 @@ def get_random_card():
             break
     
     if selected_rarity is None:
-        # Если по какой-то причине не выбрана редкость, берем первую доступную
-        available_without_event = {k: v for k, v in available_rarities.items() if k != "Казань"}
+        available_without_event = {k: v for k, v in available_rarities.items() 
+                                 if not (is_event_active() and k == get_current_event_key())}
         selected_rarity = list(available_without_event.keys())[0]
     
     cards_in_rarity = available_rarities[selected_rarity]["cards"]
@@ -497,8 +543,8 @@ def get_random_card():
     
     return card
 
-# Получение карточки по ID
 def get_card_by_id(card_id):
+    """Получение карточки по ID"""
     # Сначала ищем в основных карточках
     for rarity_group in RARITY_GROUPS.values():
         for card in rarity_group["cards"]:
@@ -508,17 +554,17 @@ def get_card_by_id(card_id):
                 return card
     
     # Затем ищем в карточках события
-    for rarity_group in EVENT_CARDS.values():
-        for card in rarity_group["cards"]:
+    for event_key, event_data in EVENT_CARDS.items():
+        for card in event_data["cards"]:
             if card["id"] == card_id:
-                card["rarity"] = next(r for r, rg in EVENT_CARDS.items() if card in rg["cards"])
-                card["emoji"] = EVENT_CARDS[card["rarity"]]["emoji"]
+                card["rarity"] = event_key
+                card["emoji"] = event_data["emoji"]
                 return card
     
     return None
 
-# Получение случайной карточки определенной редкости
 def get_random_card_by_rarity(target_rarity):
+    """Получение случайной карточки определенной редкости"""
     available_rarities = get_available_rarities()
     
     if target_rarity not in available_rarities:
@@ -533,8 +579,8 @@ def get_random_card_by_rarity(target_rarity):
     
     return card
 
-# Получение случайной карточки события
 def get_random_event_card(event_name):
+    """Получение случайной карточки события"""
     if event_name not in EVENT_CARDS:
         return None
     
@@ -547,8 +593,8 @@ def get_random_event_card(event_name):
     
     return card
 
-# Добавление карточки пользователю
 def add_card_to_user(user_id, card):
+    """Добавление карточки пользователю"""
     user_data = load_user_data()
     
     if user_id not in user_data:
@@ -560,7 +606,7 @@ def add_card_to_user(user_id, card):
         "rarity": card["rarity"],
         "points": card["points"],
         "acquired": datetime.now(timezone.utc).isoformat(),
-        "from_promo": True  # Помечаем что карта из промокода
+        "from_promo": True
     })
     
     user_data[user_id]["total_points"] += card["points"]
@@ -568,8 +614,8 @@ def add_card_to_user(user_id, card):
     
     logger.info(f"User {user_id} received card from promo: {card['name']}")
 
-# Получение статистики по карточкам пользователя
 def get_user_card_stats(user_id):
+    """Получение статистики по карточкам пользователя"""
     user_data = load_user_data()
     if user_id not in user_data:
         return {}
@@ -580,7 +626,6 @@ def get_user_card_stats(user_id):
     for card in inventory:
         card_id = card["card_id"]
         if card_id not in card_stats:
-            # Находим оригинальную карточку для получения изображения и других данных
             original_card = get_card_by_id(card_id)
             if original_card:
                 card_stats[card_id] = {
@@ -598,7 +643,7 @@ def get_user_card_stats(user_id):
     
     return card_stats
 
-# Команда /start
+# ==================== КОМАНДЫ БОТА ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_rarities = get_available_rarities()
     
@@ -611,9 +656,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     event_info = ""
     if is_event_active():
+        event_key = get_current_event_key()
+        event_cards_count = len(EVENT_CARDS[event_key]["cards"]) if event_key in EVENT_CARDS else 0
         event_info = f"\n🎉 **АКТИВНОЕ СОБЫТИЕ: {EVENT_CONFIG['name']} {EVENT_CONFIG['emoji']}**\n"
         event_info += f"📅 До: {EVENT_CONFIG['end_date']}\n"
-        event_info += f"🎴 Специальные карточки: {len(EVENT_CARDS['Казань']['cards'])} шт.\n\n"
+        event_info += f"🎴 Специальные карточки: {event_cards_count} шт.\n\n"
     
     await update.message.reply_text(
         f"🎴 **Добро пожаловать в коллекцию карточек!**\n\n"
@@ -629,18 +676,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
 
-# Команда /event
 async def show_event_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_event_active():
+        event_key = get_current_event_key()
         event_cards_info = "🎴 **Карточки события:**\n"
-        for card in EVENT_CARDS["Казань"]["cards"]:
-            event_cards_info += f"• {card['name']} ({card['points']} очков)\n"
+        if event_key in EVENT_CARDS:
+            for card in EVENT_CARDS[event_key]["cards"]:
+                event_cards_info += f"• {card['name']} ({card['points']} очков)\n"
         
         await update.message.reply_text(
             f"🎉 **СОБЫТИЕ: {EVENT_CONFIG['name']} {EVENT_CONFIG['emoji']}**\n\n"
             f"📅 **Период:** {EVENT_CONFIG['start_date']} - {EVENT_CONFIG['end_date']}\n"
             f"🎲 **Шанс выпадения:** {EVENT_CONFIG['chance']}%\n"
-            f"⭐ **Особые карточки:** {len(EVENT_CARDS['Казань']['cards'])} шт.\n\n"
+            f"⭐ **Особые карточки:** {len(EVENT_CARDS[event_key]['cards'])} шт.\n\n"
             f"{event_cards_info}\n"
             f"⚡ **Успей получить до окончания события!**",
             parse_mode='Markdown'
@@ -652,7 +700,6 @@ async def show_event_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode='Markdown'
         )
 
-# Команда /rarities
 async def show_rarities(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_rarities = get_available_rarities()
     
@@ -668,31 +715,25 @@ async def show_rarities(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(rarity_info, parse_mode='Markdown')
 
-# Команда /getcard
 async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     user_data = load_user_data()
 
     last_used = user_data.get(user_id, {}).get('last_used')
     if last_used:
-        # Преобразуем строку времени в объект datetime с учетом временной зоны
         if last_used.endswith('Z'):
             last_time = datetime.fromisoformat(last_used.replace('Z', '+00:00'))
         else:
             last_time = datetime.fromisoformat(last_used)
         
-        # Получаем текущее время с временной зоной
         current_time = datetime.now(timezone.utc)
         
-        # Если last_time наивный (без временной зоны), считаем его UTC
         if last_time.tzinfo is None:
             last_time = last_time.replace(tzinfo=timezone.utc)
         
-        # Вычисляем разницу во времени
         time_passed = current_time - last_time
         cooldown_duration = timedelta(minutes=COOLDOWN_MINUTES)
         
-        # Проверяем, прошел ли кулдаун
         if time_passed < cooldown_duration:
             remaining_time = cooldown_duration - time_passed
             total_seconds = int(remaining_time.total_seconds())
@@ -717,7 +758,7 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Специальное сообщение для карточек события
     event_notice = ""
-    if card["rarity"] == "Казань":
+    if is_event_active() and card["rarity"] == get_current_event_key():
         event_notice = f"\n🎉 **ЭКСКЛЮЗИВНАЯ КАРТОЧКА СОБЫТИЯ {EVENT_CONFIG['name']}!**"
     
     caption = (
@@ -751,203 +792,12 @@ async def get_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     logger.info(f"User {user_id} received card: {card['name']} (rarity: {card['rarity']})")
 
-# Команда /inventory - показывает меню выбора редкости
 async def show_inventory(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     user_data = load_user_data()
     
     if user_id not in user_data or not user_data[user_id]["inventory"]:
         await update.message.reply_text("📭 Ваша коллекция пуста!\nИспользуйте /getcard чтобы получить первую карточку.")
-        return
-    
-    inventory = user_data[user_id]["inventory"]
-    total_points = user_data[user_id]["total_points"]
-    
-    # Считаем карточки по редкостям
-    rarity_count = {}
-    for card in inventory:
-        rarity = card["rarity"]
-        rarity_count[rarity] = rarity_count.get(rarity, 0) + 1
-    
-    # Создаем клавиатуру с редкостями (все редкости, которые есть у пользователя)
-    keyboard = []
-    
-    # Основные редкости
-    for rarity in RARITY_GROUPS:
-        if rarity in rarity_count and rarity_count[rarity] > 0:
-            emoji = RARITY_GROUPS[rarity]["emoji"]
-            count = rarity_count[rarity]
-            keyboard.append([InlineKeyboardButton(f"{emoji} {rarity} ({count})", callback_data=f"rarity_{rarity}")])
-    
-    # Карточки события (если есть)
-    if "Казань" in rarity_count and rarity_count["Казань"] > 0:
-        emoji = EVENT_CARDS["Казань"]["emoji"]
-        count = rarity_count["Казань"]
-        event_status = " 🔚" if not is_event_active() else ""  # Добавляем пометку если событие завершено
-        keyboard.append([InlineKeyboardButton(f"{emoji} Казань ({count}){event_status}", callback_data=f"rarity_Казань")])
-    
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    event_info = ""
-    if "Казань" in rarity_count:
-        event_status = " (завершено)" if not is_event_active() else " (активно)"
-        event_info = f"\n🏙️ Карточек события: {rarity_count['Казань']} шт.{event_status}"
-    
-    stats_text = (
-        f"📊 **Ваша коллекция:**\n"
-        f"📚 Всего карточек: {len(inventory)}\n"
-        f"⭐ Всего очков: {total_points}"
-        f"{event_info}\n\n"
-        f"🎲 **Выберите редкость для просмотра:**"
-    )
-    
-    await update.message.reply_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
-
-# Обработчик выбора редкости
-async def show_rarity_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    
-    user_id = str(query.from_user.id)
-    rarity = query.data.replace("rarity_", "")
-    
-    card_stats = get_user_card_stats(user_id)
-    
-    # Фильтруем карточки по выбранной редкости
-    rarity_cards = {card_id: stats for card_id, stats in card_stats.items() if stats["rarity"] == rarity}
-    
-    if not rarity_cards:
-        await query.edit_message_text(f"❌ У вас нет карточек редкости: {rarity}")
-        return
-    
-    # Сохраняем данные для навигации
-    context.user_data["current_rarity"] = rarity
-    context.user_data["rarity_cards"] = list(rarity_cards.items())  # Список (card_id, stats)
-    context.user_data["current_card_index"] = 0
-    
-    # Показываем первую карточку
-    await show_card_navigation(query, context)
-
-# Функция для показа карточки с навигацией
-async def show_card_navigation(query, context):
-    user_data = context.user_data
-    rarity = user_data["current_rarity"]
-    cards = user_data["rarity_cards"]
-    current_index = user_data["current_card_index"]
-    
-    if current_index >= len(cards):
-        current_index = 0
-        user_data["current_card_index"] = 0
-    
-    card_id, card_stats = cards[current_index]
-    
-    # Создаем подпись с пометкой о завершении события если нужно
-    event_mark = ""
-    if card_stats['rarity'] == "Казань":
-        if is_event_active():
-            event_mark = " 🎉"
-        else:
-            event_mark = " ⏳"  # Пометка что событие завершено
-    
-    caption = (
-        f"🎴 **{card_stats['name']}**{event_mark}\n"
-        f"{card_stats['emoji']} **Редкость:** {card_stats['rarity']}\n"
-        f"📦 **Количество:** {card_stats['count']} шт.\n"
-        f"⭐ **Очки за штуку:** {card_stats['points']}\n"
-        f"💰 **Всего очков:** {card_stats['total_points']}\n"
-        f"📄 **Карточка {current_index + 1} из {len(cards)}**"
-    )
-    
-    # Добавляем информацию о статусе события для карточек Казани
-    if card_stats['rarity'] == "Казань" and not is_event_active():
-        caption += f"\n\nℹ️ Событие завершено. Эти карточки больше нельзя получить."
-    
-    # Создаем клавиатуру навигации
-    keyboard = []
-    
-    # Кнопки навигации
-    nav_buttons = []
-    if len(cards) > 1:
-        nav_buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data="nav_prev"))
-        nav_buttons.append(InlineKeyboardButton(f"{current_index + 1}/{len(cards)}", callback_data="nav_info"))
-        nav_buttons.append(InlineKeyboardButton("Вперёд ➡️", callback_data="nav_next"))
-        keyboard.append(nav_buttons)
-    
-    # Кнопка возврата к выбору редкости
-    keyboard.append([InlineKeyboardButton("🔙 Назад к редкостям", callback_data="back_to_rarities")])
-    
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    try:
-        with open(card_stats['image'], 'rb') as photo:
-            if query.message.photo:
-                # Если сообщение уже содержит фото, редактируем его
-                await query.message.edit_media(
-                    media=InputMediaPhoto(photo, caption=caption, parse_mode='Markdown'),
-                    reply_markup=reply_markup
-                )
-            else:
-                # Если нет фото, отправляем новое сообщение
-                await query.message.reply_photo(
-                    photo=photo,
-                    caption=caption,
-                    reply_markup=reply_markup,
-                    parse_mode='Markdown'
-                )
-    except FileNotFoundError:
-        # Если изображение не найдено, отправляем текстовое сообщение
-        if query.message.photo:
-            await query.edit_message_text(
-                f"❌ Изображение карточки не найдено!\n\n{caption}",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-        else:
-            await query.message.reply_text(
-                f"❌ Изображение карточки не найдено!\n\n{caption}",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-
-# Обработчик навигации
-async def handle_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    
-    action = query.data
-    user_data = context.user_data
-    
-    if "current_card_index" not in user_data or "rarity_cards" not in user_data:
-        await query.edit_message_text("❌ Сессия просмотра истекла. Используйте /inventory снова.")
-        return
-    
-    current_index = user_data["current_card_index"]
-    total_cards = len(user_data["rarity_cards"])
-    
-    if action == "nav_prev":
-        user_data["current_card_index"] = (current_index - 1) % total_cards
-    elif action == "nav_next":
-        user_data["current_card_index"] = (current_index + 1) % total_cards
-    elif action == "back_to_rarities":
-        # Очищаем данные навигации
-        user_data.pop("current_rarity", None)
-        user_data.pop("rarity_cards", None)
-        user_data.pop("current_card_index", None)
-        await show_inventory_from_callback(query, context)
-        return
-    elif action == "nav_info":
-        # Просто обновляем сообщение без изменения индекса
-        pass
-    
-    await show_card_navigation(query, context)
-
-# Возврат к выбору редкости из callback
-async def show_inventory_from_callback(query, context):
-    user_id = str(query.from_user.id)
-    user_data = load_user_data()
-    
-    if user_id not in user_data or not user_data[user_id]["inventory"]:
-        await query.edit_message_text("📭 Ваша коллекция пуста!\nИспользуйте /getcard чтобы получить первую карточку.")
         return
     
     inventory = user_data[user_id]["inventory"]
@@ -969,19 +819,27 @@ async def show_inventory_from_callback(query, context):
             count = rarity_count[rarity]
             keyboard.append([InlineKeyboardButton(f"{emoji} {rarity} ({count})", callback_data=f"rarity_{rarity}")])
     
-    # Карточки события (если есть)
-    if "Казань" in rarity_count and rarity_count["Казань"] > 0:
-        emoji = EVENT_CARDS["Казань"]["emoji"]
-        count = rarity_count["Казань"]
-        event_status = " 🔚" if not is_event_active() else ""  # Добавляем пометку если событие завершено
-        keyboard.append([InlineKeyboardButton(f"{emoji} Казань ({count}){event_status}", callback_data=f"rarity_Казань")])
+    # Карточки событий (все события, которые есть у пользователя)
+    for event_config in EVENTS_CONFIG.values():
+        event_key = event_config["key"]
+        if event_key in rarity_count and rarity_count[event_key] > 0:
+            emoji = event_config["emoji"]
+            count = rarity_count[event_key]
+            # Показываем статус события (активно/завершено)
+            event_active = event_config["active"] and is_event_active() and event_config["key"] == get_current_event_key()
+            event_status = " 🔚" if not event_active else " 🎉"
+            keyboard.append([InlineKeyboardButton(f"{emoji} {event_key} ({count}){event_status}", callback_data=f"rarity_{event_key}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
+    # Информация о событиях
     event_info = ""
-    if "Казань" in rarity_count:
-        event_status = " (завершено)" if not is_event_active() else " (активно)"
-        event_info = f"\n🏙️ Карточек события: {rarity_count['Казань']} шт.{event_status}"
+    for event_config in EVENTS_CONFIG.values():
+        event_key = event_config["key"]
+        if event_key in rarity_count:
+            event_active = event_config["active"] and is_event_active() and event_config["key"] == get_current_event_key()
+            event_status = "завершено" if not event_active else "активно"
+            event_info += f"\n{event_config['emoji']} Карточек события {event_key}: {rarity_count[event_key]} шт. ({event_status})"
     
     stats_text = (
         f"📊 **Ваша коллекция:**\n"
@@ -991,15 +849,193 @@ async def show_inventory_from_callback(query, context):
         f"🎲 **Выберите редкость для просмотра:**"
     )
     
-    # Проверяем, есть ли фото в сообщении
+    await update.message.reply_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
+
+async def show_rarity_cards(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    rarity = query.data.replace("rarity_", "")
+    
+    card_stats = get_user_card_stats(user_id)
+    
+    # Фильтруем карточки по выбранной редкости
+    rarity_cards = {card_id: stats for card_id, stats in card_stats.items() if stats["rarity"] == rarity}
+    
+    if not rarity_cards:
+        await query.edit_message_text(f"❌ У вас нет карточек редкости: {rarity}")
+        return
+    
+    # Сохраняем данные для навигации
+    context.user_data["current_rarity"] = rarity
+    context.user_data["rarity_cards"] = list(rarity_cards.items())
+    context.user_data["current_card_index"] = 0
+    
+    await show_card_navigation(query, context)
+
+async def show_card_navigation(query, context):
+    user_data = context.user_data
+    rarity = user_data["current_rarity"]
+    cards = user_data["rarity_cards"]
+    current_index = user_data["current_card_index"]
+    
+    if current_index >= len(cards):
+        current_index = 0
+        user_data["current_card_index"] = 0
+    
+    card_id, card_stats = cards[current_index]
+    
+    # Определяем, является ли карточка событийной
+    event_mark = ""
+    is_event_card = False
+    for event_config in EVENTS_CONFIG.values():
+        if card_stats['rarity'] == event_config["key"]:
+            is_event_card = True
+            event_active = event_config["active"] and is_event_active() and event_config["key"] == get_current_event_key()
+            event_mark = " 🎉" if event_active else " ⏳"
+            break
+    
+    caption = (
+        f"🎴 **{card_stats['name']}**{event_mark}\n"
+        f"{card_stats['emoji']} **Редкость:** {card_stats['rarity']}\n"
+        f"📦 **Количество:** {card_stats['count']} шт.\n"
+        f"⭐ **Очки за штуку:** {card_stats['points']}\n"
+        f"💰 **Всего очков:** {card_stats['total_points']}\n"
+        f"📄 **Карточка {current_index + 1} из {len(cards)}**"
+    )
+    
+    # Добавляем информацию о статусе события для событийных карточек
+    if is_event_card and not is_event_active():
+        caption += f"\n\nℹ️ Событие завершено. Эти карточки больше нельзя получить."
+    
+    # Создаем клавиатуру навигации
+    keyboard = []
+    
+    nav_buttons = []
+    if len(cards) > 1:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Назад", callback_data="nav_prev"))
+        nav_buttons.append(InlineKeyboardButton(f"{current_index + 1}/{len(cards)}", callback_data="nav_info"))
+        nav_buttons.append(InlineKeyboardButton("Вперёд ➡️", callback_data="nav_next"))
+        keyboard.append(nav_buttons)
+    
+    keyboard.append([InlineKeyboardButton("🔙 Назад к редкостям", callback_data="back_to_rarities")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        with open(card_stats['image'], 'rb') as photo:
+            if query.message.photo:
+                await query.message.edit_media(
+                    media=InputMediaPhoto(photo, caption=caption, parse_mode='Markdown'),
+                    reply_markup=reply_markup
+                )
+            else:
+                await query.message.reply_photo(
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=reply_markup,
+                    parse_mode='Markdown'
+                )
+    except FileNotFoundError:
+        if query.message.photo:
+            await query.edit_message_text(
+                f"❌ Изображение карточки не найдено!\n\n{caption}",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+        else:
+            await query.message.reply_text(
+                f"❌ Изображение карточки не найдено!\n\n{caption}",
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+
+async def handle_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    action = query.data
+    user_data = context.user_data
+    
+    if "current_card_index" not in user_data or "rarity_cards" not in user_data:
+        await query.edit_message_text("❌ Сессия просмотра истекла. Используйте /inventory снова.")
+        return
+    
+    current_index = user_data["current_card_index"]
+    total_cards = len(user_data["rarity_cards"])
+    
+    if action == "nav_prev":
+        user_data["current_card_index"] = (current_index - 1) % total_cards
+    elif action == "nav_next":
+        user_data["current_card_index"] = (current_index + 1) % total_cards
+    elif action == "back_to_rarities":
+        user_data.pop("current_rarity", None)
+        user_data.pop("rarity_cards", None)
+        user_data.pop("current_card_index", None)
+        await show_inventory_from_callback(query, context)
+        return
+    elif action == "nav_info":
+        pass
+    
+    await show_card_navigation(query, context)
+
+async def show_inventory_from_callback(query, context):
+    user_id = str(query.from_user.id)
+    user_data = load_user_data()
+    
+    if user_id not in user_data or not user_data[user_id]["inventory"]:
+        await query.edit_message_text("📭 Ваша коллекция пуста!\nИспользуйте /getcard чтобы получить первую карточку.")
+        return
+    
+    inventory = user_data[user_id]["inventory"]
+    total_points = user_data[user_id]["total_points"]
+    
+    rarity_count = {}
+    for card in inventory:
+        rarity = card["rarity"]
+        rarity_count[rarity] = rarity_count.get(rarity, 0) + 1
+    
+    keyboard = []
+    
+    for rarity in RARITY_GROUPS:
+        if rarity in rarity_count and rarity_count[rarity] > 0:
+            emoji = RARITY_GROUPS[rarity]["emoji"]
+            count = rarity_count[rarity]
+            keyboard.append([InlineKeyboardButton(f"{emoji} {rarity} ({count})", callback_data=f"rarity_{rarity}")])
+    
+    for event_config in EVENTS_CONFIG.values():
+        event_key = event_config["key"]
+        if event_key in rarity_count and rarity_count[event_key] > 0:
+            emoji = event_config["emoji"]
+            count = rarity_count[event_key]
+            event_active = event_config["active"] and is_event_active() and event_config["key"] == get_current_event_key()
+            event_status = " 🔚" if not event_active else " 🎉"
+            keyboard.append([InlineKeyboardButton(f"{emoji} {event_key} ({count}){event_status}", callback_data=f"rarity_{event_key}")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    event_info = ""
+    for event_config in EVENTS_CONFIG.values():
+        event_key = event_config["key"]
+        if event_key in rarity_count:
+            event_active = event_config["active"] and is_event_active() and event_config["key"] == get_current_event_key()
+            event_status = "завершено" if not event_active else "активно"
+            event_info += f"\n{event_config['emoji']} Карточек события {event_key}: {rarity_count[event_key]} шт. ({event_status})"
+    
+    stats_text = (
+        f"📊 **Ваша коллекция:**\n"
+        f"📚 Всего карточек: {len(inventory)}\n"
+        f"⭐ Всего очков: {total_points}"
+        f"{event_info}\n\n"
+        f"🎲 **Выберите редкость для просмотра:**"
+    )
+    
     if query.message.photo:
-        # Если есть фото, заменяем его на текст
         await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
-        # Если нет фото, просто редактируем текст
         await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-# Команда /promo
 async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     
@@ -1015,32 +1051,26 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     promo_data = load_promo_data()
     user_data = load_user_data()
     
-    # Инициализация данных пользователя если нужно
     if user_id not in user_data:
         user_data[user_id] = {"inventory": [], "total_points": 0, "last_used": None, "used_promocodes": []}
     
-    # Проверка использованных промокодов
     if "used_promocodes" not in user_data[user_id]:
         user_data[user_id]["used_promocodes"] = []
     
-    # Проверяем использовал ли пользователь уже этот промокод (в базе данных)
     if has_user_used_promo(user_id, promo_code):
         await update.message.reply_text("❌ Вы уже использовали этот промокод!")
         return
     
-    # Проверка существования промокода
     if promo_code not in promo_data:
         await update.message.reply_text("❌ Неверный промокод!")
         return
     
     promo = promo_data[promo_code]
     
-    # Проверка оставшихся использований
     if promo["uses_left"] <= 0:
         await update.message.reply_text("❌ Промокод больше не действителен!")
         return
     
-    # Обработка промокода
     if promo["type"] == "random_rarity":
         card = get_random_card_by_rarity(promo["rarity"])
         if not card:
@@ -1052,7 +1082,6 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Ошибка при получении карты!")
             return
     elif promo["type"] == "random_event":
-        # Новый тип промокода - случайная карточка события
         card = get_random_event_card(promo["event"])
         if not card:
             await update.message.reply_text("❌ Ошибка при получении карты события!")
@@ -1061,7 +1090,6 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Неизвестный тип промокода!")
         return
     
-    # Отправка карточки
     event_notice = ""
     if promo["type"] == "random_event":
         event_notice = f"\n🎉 **ЭКСКЛЮЗИВНАЯ КАРТОЧКА СОБЫТИЯ {promo['event']}!**"
@@ -1082,17 +1110,13 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Ошибка: изображение {card['image']} не найдено")
         return
     
-    # Обновление данных
     promo_data[promo_code]["uses_left"] -= 1
     save_promo_data(promo_data)
     
-    # Помечаем промокод как использованный для этого пользователя
     mark_promo_used(user_id, promo_code)
     
-    # Добавляем карточку пользователю
     add_card_to_user(user_id, card)
     
-    # Информация об остатке использований
     uses_left = promo_data[promo_code]["uses_left"]
     if uses_left > 0:
         uses_info = f"Осталось использований: {uses_left}/{promo['max_uses']}"
@@ -1102,7 +1126,6 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Промокод успешно активирован!\n{uses_info}")
 
 if __name__ == "__main__":
-    # Инициализация базы данных
     init_db()
     
     # Проверка существования карточек
@@ -1111,31 +1134,26 @@ if __name__ == "__main__":
             if not os.path.exists(card['image']):
                 logger.warning(f"Image not found: {card['image']}")
     
-    # Проверка карточек события
-    for rarity, data in EVENT_CARDS.items():
-        for card in data["cards"]:
+    for event_key, event_data in EVENT_CARDS.items():
+        for card in event_data["cards"]:
             if not os.path.exists(card['image']):
                 logger.warning(f"Event image not found: {card['image']}")
     
-    # ИСПРАВЛЕННАЯ ПРОВЕРКА СУММЫ ШАНСОВ
     total_base_chance = sum(data["base_chance"] for data in RARITY_GROUPS.values())
-    if abs(total_base_chance - 100.0) > 0.1:  # Допускаем небольшую погрешность из-за округления
+    if abs(total_base_chance - 100.0) > 0.1:
         logger.warning(f"Total base chance is {total_base_chance}% (should be 100%)")
     else:
         logger.info(f"Total base chance: {total_base_chance}% (correct)")
 
-    # Проверка события
     if is_event_active():
         logger.info(f"Событие '{EVENT_CONFIG['name']}' активно!")
     else:
         logger.info("Событие не активно")
 
-    # Загрузка данных промокодов при старте
     load_promo_data()
 
     application = Application.builder().token(BOT_TOKEN).build()
     
-    # Обработчики команд
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("getcard", get_card))
     application.add_handler(CommandHandler("inventory", show_inventory))
@@ -1143,7 +1161,6 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("promo", use_promo))
     application.add_handler(CommandHandler("event", show_event_info))
     
-    # Обработчики callback-ов для инвентаря
     application.add_handler(CallbackQueryHandler(show_rarity_cards, pattern="^rarity_"))
     application.add_handler(CallbackQueryHandler(handle_navigation, pattern="^nav_"))
     application.add_handler(CallbackQueryHandler(show_inventory_from_callback, pattern="^back_to_rarities$"))
