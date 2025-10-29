@@ -368,7 +368,7 @@ def init_db():
             total_points INTEGER DEFAULT 0,
             last_used TIMESTAMP WITH TIME ZONE,
             used_promocodes JSONB,
-            daily_streak INTEGER DEFAULT 0,  # Убедитесь, что это правильное имя
+            daily_streak INTEGER DEFAULT 0,
             last_daily TIMESTAMP WITH TIME ZONE,
             profile_data JSONB
         )
@@ -449,8 +449,8 @@ def load_user_data():
             "total_points": user['total_points'] or 0,
             "last_used": user['last_used'].isoformat() if user['last_used'] else None,
             "used_promocodes": user['used_promocodes'] or [],
-            "daily_streak": user.get('daily_streak', 0) or 0,  # Исправлено здесь
-            "last_daily": user['last_daily'].isoformat() if user.get('last_daily') else None,  # И здесь
+            "daily_streak": user.get('daily_streak', 0) or 0,
+            "last_daily": user['last_daily'].isoformat() if user.get('last_daily') else None,
             "profile_data": user.get('profile_data') or {"title": "Новичок", "frame": "Стандартная", "bio": ""}
         }
     
@@ -481,7 +481,7 @@ def save_user_data(data):
             user_info.get("total_points", 0),
             user_info.get("last_used"),
             json.dumps(user_info.get("used_promocodes", [])),
-            user_info.get("daily_streak", 0),  # Исправлено здесь
+            user_info.get("daily_streak", 0),
             user_info.get("last_daily"),
             json.dumps(user_info.get("profile_data", {"title": "Новичок", "frame": "Стандартная", "bio": ""}))
         ))
