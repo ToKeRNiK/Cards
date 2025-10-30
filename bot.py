@@ -58,33 +58,40 @@ CRAFT_RECIPES = {
         "emoji": "🟢→🔵"
     },
     "Сверхредкая": {
-        "name": "3 Сверхредкие → 1 Эпическая", 
+        "name": "5 Сверхредкие → 1 Эпическая", 
         "required_rarity": "Сверхредкая",
         "required_count": 5,
         "result_rarity": "Эпическая",
         "emoji": "🔵→🟣"
     },
     "Эпическая": {
-        "name": "3 Эпические → 1 Мифическая",
+        "name": "6 Эпические → 1 Мифическая",
         "required_rarity": "Эпическая", 
         "required_count": 6,
         "result_rarity": "Мифическая",
         "emoji": "🟣→🔴"
     },
     "Мифическая": {
-        "name": "3 Мифические → 1 Легендарная",
+        "name": "8 Мифические → 1 Легендарная",
         "required_rarity": "Мифическая",
         "required_count": 8, 
         "result_rarity": "Легендарная",
         "emoji": "🔴→🟡"
     },
     "Легендарная": {
-        "name": "3 Легендарные → 1 Секретная",
+        "name": "10 Легендарные → 1 Секретная",
         "required_rarity": "Легендарная",
         "required_count": 10,
         "result_rarity": "Секретная", 
         "emoji": "🟡→⚫️"
     },
+    "Секретная": {
+        "name": "3 Секретные → 1 Эксклюзивная",
+        "required_rarity": "Секретная",
+        "required_count": 3,
+        "result_rarity": "Эксклюзивная",
+        "emoji": "⚫️→🟠"
+    }
 }
 
 # ==================== ОСНОВНЫЕ КАРТОЧКИ ====================
@@ -1268,6 +1275,7 @@ async def show_craft(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "• 6 Эпические → 1 Мифическая 🟣→🔴\n"
             "• 8 Мифические → 1 Легендарная 🔴→🟡\n"
             "• 10 Легендарные → 1 Секретная 🟡→⚫️\n"
+            "• 3 Секретные → 1 Эксклюзивная ⚫️→🟠\n\n"
             "💡 Собирайте дубликаты карточек для крафта!"
         )
         return
@@ -1417,8 +1425,10 @@ if __name__ == "__main__":
 
     load_promo_data()
 
+    # Создаем Application с настройками для решения проблемы с 409 Conflict
     application = Application.builder().token(BOT_TOKEN).build()
     
+    # Добавляем обработчики
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("getcard", get_card))
     application.add_handler(CommandHandler("inventory", show_inventory))
@@ -1435,4 +1445,16 @@ if __name__ == "__main__":
     application.add_handler(CallbackQueryHandler(handle_craft_confirmation, pattern="^craft_cancel$"))
     
     logger.info("Бот запущен на Railway...")
-    application.run_polling()
+    
+    # Запускаем бота с обработкой graceful shutdown
+    try:
+        application.run_polling(
+            poll_interval=1.0,
+            timeout=30,
+            drop_pending_updates=True,
+            allowed_updates=['message', 'callback_query']
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при запуске бота: {e}")
+    finally:
+        logger.info("Бот остановлен")
