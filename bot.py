@@ -5,7 +5,7 @@ import logging
 import psycopg2
 from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
 from psycopg2.extras import RealDictCursor
 
 # Настройка логирования
@@ -23,15 +23,11 @@ COOLDOWN_MINUTES = 5
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:GjvKELSoRVzbyXCnxEMBdWvOTiCvufbs@postgres.railway.internal:5432/railway')
 
 # ==================== КОНФИГУРАЦИЯ СОБЫТИЙ ====================
-# Чтобы добавить новое событие, просто добавьте его в EVENTS_CONFIG и EVENT_CARDS
-# Чтобы активировать событие, установите CURRENT_EVENT в ключ события
-
-# Конфигурация всех событий
 EVENTS_CONFIG = {
     "Казань2025": {
         "name": "Казань2025",
-        "key": "Казань",  # Уникальный ключ для идентификации
-        "active": False,  # Включить/выключить событие
+        "key": "Казань",
+        "active": False,
         "start_date": "2025-10-27",
         "end_date": "2025-10-29", 
         "emoji": "🏙️",
@@ -39,8 +35,8 @@ EVENTS_CONFIG = {
     },
     "Хэллоуин2025": {
         "name": "Хэллоуин2025", 
-        "key": "Хэллоуин",  # Уникальный ключ для идентификации
-        "active": True,  # Включить новое событие
+        "key": "Хэллоуин",
+        "active": True,
         "start_date": "2025-10-29",
         "end_date": "2025-10-31",
         "emoji": "🎃",
@@ -48,7 +44,7 @@ EVENTS_CONFIG = {
     }
 }
 
-# Активное событие (измените эту переменную чтобы активировать другое событие)
+# Активное событие
 CURRENT_EVENT = "Хэллоуин2025"
 EVENT_CONFIG = EVENTS_CONFIG[CURRENT_EVENT]
 
@@ -305,6 +301,19 @@ def init_db():
         )
     ''')
     
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            trade_id SERIAL PRIMARY KEY,
+            user1_id TEXT NOT NULL,
+            user2_id TEXT NOT NULL,
+            user1_card_id REAL NOT NULL,
+            user2_card_id REAL NOT NULL,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            completed_at TIMESTAMP WITH TIME ZONE
+        )
+    ''')
+    
     for code, data in PROMOCODES.items():
         cur.execute('''
             INSERT INTO promocodes (code, type, rarity, card_id, event_name, uses_left, max_uses, description)
@@ -449,6 +458,133 @@ def mark_promo_used(user_id, promo_code):
     conn.commit()
     cur.close()
     conn.close()
+
+# ==================== СИСТЕМА ТРЕЙДОВ ====================
+def create_trade(user1_id, user2_id, user1_card_id, user2_card_id):
+    """Создание трейда между игроками"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute('''
+        INSERT INTO trades (user1_id, user2_id, user1_card_id, user2_card_id)
+        VALUES (%s, %s, %s, %s)
+        RETURNING trade_id
+    ''', (user1_id, user2_id, user1_card_id, user2_card_id))
+    
+    trade_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return trade_id
+
+def get_trade(trade_id):
+    """Получение информации о трейде"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cur.execute('SELECT * FROM trades WHERE trade_id = %s', (trade_id,))
+    trade = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+    return trade
+
+def update_trade_status(trade_id, status):
+    """Обновление статуса трейда"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if status == 'completed':
+        cur.execute('''
+            UPDATE trades 
+            SET status = %s, completed_at = NOW()
+            WHERE trade_id = %s
+        ''', (status, trade_id))
+    else:
+        cur.execute('''
+            UPDATE trades 
+            SET status = %s
+            WHERE trade_id = %s
+        ''', (status, trade_id))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def get_user_trades(user_id):
+    """Получение всех трейдов пользователя"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    cur.execute('''
+        SELECT * FROM trades 
+        WHERE (user1_id = %s OR user2_id = %s) 
+        AND status = 'pending'
+        ORDER BY created_at DESC
+    ''', (user_id, user_id))
+    
+    trades = cur.fetchall()
+    cur.close()
+    conn.close()
+    return trades
+
+def execute_trade(trade_id):
+    """Выполнение трейда - обмен карточками"""
+    trade = get_trade(trade_id)
+    if not trade:
+        return False
+    
+    user1_id = trade['user1_id']
+    user2_id = trade['user2_id']
+    user1_card_id = trade['user1_card_id']
+    user2_card_id = trade['user2_card_id']
+    
+    user_data = load_user_data()
+    
+    # Проверяем, что у пользователей еще есть эти карточки
+    user1_has_card = any(card['card_id'] == user1_card_id for card in user_data[user1_id]['inventory'])
+    user2_has_card = any(card['card_id'] == user2_card_id for card in user_data[user2_id]['inventory'])
+    
+    if not user1_has_card or not user2_has_card:
+        return False
+    
+    # Находим и удаляем карточки
+    user1_card_to_remove = None
+    for i, card in enumerate(user_data[user1_id]['inventory']):
+        if card['card_id'] == user1_card_id:
+            user1_card_to_remove = user_data[user1_id]['inventory'].pop(i)
+            user_data[user1_id]['total_points'] -= user1_card_to_remove['points']
+            break
+    
+    user2_card_to_remove = None
+    for i, card in enumerate(user_data[user2_id]['inventory']):
+        if card['card_id'] == user2_card_id:
+            user2_card_to_remove = user_data[user2_id]['inventory'].pop(i)
+            user_data[user2_id]['total_points'] -= user2_card_to_remove['points']
+            break
+    
+    if not user1_card_to_remove or not user2_card_to_remove:
+        return False
+    
+    # Добавляем карточки новым владельцам
+    user1_card_to_remove['acquired'] = datetime.now(timezone.utc).isoformat()
+    user2_card_to_remove['acquired'] = datetime.now(timezone.utc).isoformat()
+    
+    user_data[user2_id]['inventory'].append(user1_card_to_remove)
+    user_data[user2_id]['total_points'] += user1_card_to_remove['points']
+    
+    user_data[user1_id]['inventory'].append(user2_card_to_remove)
+    user_data[user1_id]['total_points'] += user2_card_to_remove['points']
+    
+    save_user_data(user_data)
+    update_trade_status(trade_id, 'completed')
+    
+    return True
+
+def cancel_trade(trade_id):
+    """Отмена трейда"""
+    update_trade_status(trade_id, 'cancelled')
 
 # ==================== СИСТЕМА СОБЫТИЙ ====================
 def is_event_active():
@@ -643,6 +779,12 @@ def get_user_card_stats(user_id):
     
     return card_stats
 
+def get_user_duplicate_cards(user_id):
+    """Получение дубликатов карточек пользователя"""
+    card_stats = get_user_card_stats(user_id)
+    duplicates = {card_id: stats for card_id, stats in card_stats.items() if stats["count"] > 1}
+    return duplicates
+
 # ==================== КОМАНДЫ БОТА ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_rarities = get_available_rarities()
@@ -670,7 +812,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/inventory - Показать вашу коллекцию\n"
         "/rarities - Информация о редкостях\n"
         "/promo <код> - Активировать промокод\n"
-        "/event - Информация о событии\n\n"
+        "/event - Информация о событии\n"
+        "/trade - Система обмена карточками\n"
+        "/mytrades - Мои активные трейды\n\n"
         f"⏰ **Кулдаун:** {COOLDOWN_MINUTES} минут\n\n"
         f"{rarity_info}",
         parse_mode='Markdown'
@@ -830,6 +974,11 @@ async def show_inventory(update: Update, context: ContextTypes.DEFAULT_TYPE):
             event_status = " 🔚" if not event_active else " 🎉"
             keyboard.append([InlineKeyboardButton(f"{emoji} {event_key} ({count}){event_status}", callback_data=f"rarity_{event_key}")])
     
+    # Кнопка для просмотра дубликатов
+    duplicates = get_user_duplicate_cards(user_id)
+    if duplicates:
+        keyboard.append([InlineKeyboardButton("🔄 Дубликаты для обмена", callback_data="show_duplicates")])
+    
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Информация о событиях
@@ -902,6 +1051,7 @@ async def show_card_navigation(query, context):
         f"📦 **Количество:** {card_stats['count']} шт.\n"
         f"⭐ **Очки за штуку:** {card_stats['points']}\n"
         f"💰 **Всего очков:** {card_stats['total_points']}\n"
+        f"🆔 **ID карточки:** {card_id}\n"
         f"📄 **Карточка {current_index + 1} из {len(cards)}**"
     )
     
@@ -918,6 +1068,10 @@ async def show_card_navigation(query, context):
         nav_buttons.append(InlineKeyboardButton(f"{current_index + 1}/{len(cards)}", callback_data="nav_info"))
         nav_buttons.append(InlineKeyboardButton("Вперёд ➡️", callback_data="nav_next"))
         keyboard.append(nav_buttons)
+    
+    # Кнопка для предложения обмена, если есть дубликаты
+    if card_stats['count'] > 1:
+        keyboard.append([InlineKeyboardButton("🔄 Предложить обмен этой карточкой", callback_data=f"trade_card_{card_id}")])
     
     keyboard.append([InlineKeyboardButton("🔙 Назад к редкостям", callback_data="back_to_rarities")])
     
@@ -1013,6 +1167,11 @@ async def show_inventory_from_callback(query, context):
             event_status = " 🔚" if not event_active else " 🎉"
             keyboard.append([InlineKeyboardButton(f"{emoji} {event_key} ({count}){event_status}", callback_data=f"rarity_{event_key}")])
     
+    # Кнопка для просмотра дубликатов
+    duplicates = get_user_duplicate_cards(user_id)
+    if duplicates:
+        keyboard.append([InlineKeyboardButton("🔄 Дубликаты для обмена", callback_data="show_duplicates")])
+    
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     event_info = ""
@@ -1035,6 +1194,260 @@ async def show_inventory_from_callback(query, context):
         await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
     else:
         await query.edit_message_text(stats_text, reply_markup=reply_markup, parse_mode='Markdown')
+
+async def show_duplicates(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    duplicates = get_user_duplicate_cards(user_id)
+    
+    if not duplicates:
+        await query.edit_message_text("❌ У вас нет дубликатов карточек для обмена.")
+        return
+    
+    keyboard = []
+    for card_id, card_stats in duplicates.items():
+        button_text = f"{card_stats['emoji']} {card_stats['name']} ({card_stats['count']} шт.)"
+        keyboard.append([InlineKeyboardButton(button_text, callback_data=f"trade_card_{card_id}")])
+    
+    keyboard.append([InlineKeyboardButton("🔙 Назад к коллекции", callback_data="back_to_rarities")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(
+        "🔄 **Ваши дубликаты для обмена:**\n\n"
+        "Выберите карточку, которую хотите предложить для обмена:",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
+    )
+
+async def start_trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    card_id = float(query.data.replace("trade_card_", ""))
+    
+    # Сохраняем выбранную карточку для трейда
+    context.user_data["trade_card_id"] = card_id
+    context.user_data["trade_step"] = "get_username"
+    
+    card = get_card_by_id(card_id)
+    if card:
+        await query.edit_message_text(
+            f"🔄 **Начало обмена**\n\n"
+            f"Вы предлагаете: **{card['name']}**\n"
+            f"Редкость: {card['emoji']} {card['rarity']}\n\n"
+            f"Теперь укажите @username игрока, с которым хотите обменяться:",
+            parse_mode='Markdown'
+        )
+    else:
+        await query.edit_message_text("❌ Ошибка: карточка не найдена.")
+
+async def handle_trade_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if "trade_step" not in context.user_data or context.user_data["trade_step"] != "get_username":
+        await update.message.reply_text("❌ Начните обмен заново с помощью /trade")
+        return
+    
+    username = update.message.text.strip()
+    if not username.startswith('@'):
+        await update.message.reply_text("❌ Укажите @username игрока (начинается с @)")
+        return
+    
+    context.user_data["trade_username"] = username
+    context.user_data["trade_step"] = "get_target_card"
+    
+    await update.message.reply_text(
+        f"📝 Теперь укажите ID карточки, которую хотите получить от {username}:\n\n"
+        f"Игрок должен использовать команду /inventory чтобы посмотреть ID своих карточек."
+    )
+
+async def handle_trade_target_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if "trade_step" not in context.user_data or context.user_data["trade_step"] != "get_target_card":
+        await update.message.reply_text("❌ Начните обмен заново с помощью /trade")
+        return
+    
+    try:
+        target_card_id = float(update.message.text.strip())
+    except ValueError:
+        await update.message.reply_text("❌ Укажите корректный ID карточки (число)")
+        return
+    
+    # Проверяем существование карточки
+    target_card = get_card_by_id(target_card_id)
+    if not target_card:
+        await update.message.reply_text("❌ Карточка с таким ID не существует")
+        return
+    
+    context.user_data["trade_target_card_id"] = target_card_id
+    
+    # Создаем трейд
+    user_card_id = context.user_data["trade_card_id"]
+    username = context.user_data["trade_username"]
+    
+    # Здесь должна быть логика поиска user_id по username
+    # В реальной реализации нужно хранить username в базе данных
+    # Для демонстрации будем использовать фиктивный user_id
+    target_user_id = username  # В реальности нужно получить user_id из базы по username
+    
+    trade_id = create_trade(user_id, target_user_id, user_card_id, target_card_id)
+    
+    # Очищаем данные трейда
+    context.user_data.pop("trade_step", None)
+    context.user_data.pop("trade_card_id", None)
+    context.user_data.pop("trade_username", None)
+    context.user_data.pop("trade_target_card_id", None)
+    
+    user_card = get_card_by_id(user_card_id)
+    
+    await update.message.reply_text(
+        f"✅ **Предложение обмена создано!**\n\n"
+        f"🔄 **Детали обмена:**\n"
+        f"• Вы отдаете: {user_card['name']} ({user_card['emoji']} {user_card['rarity']})\n"
+        f"• Вы получаете: {target_card['name']} ({target_card['emoji']} {target_card['rarity']})\n"
+        f"• Игрок: {username}\n\n"
+        f"📋 ID трейда: `{trade_id}`\n\n"
+        f"Игрок должен принять обмен с помощью:\n"
+        f"`/accepttrade {trade_id}`",
+        parse_mode='Markdown'
+    )
+
+async def show_my_trades(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    trades = get_user_trades(user_id)
+    
+    if not trades:
+        await update.message.reply_text("📭 У вас нет активных предложений обмена.")
+        return
+    
+    trade_list = "📋 **Ваши активные трейды:**\n\n"
+    
+    for trade in trades:
+        user1_card = get_card_by_id(trade['user1_card_id'])
+        user2_card = get_card_by_id(trade['user2_card_id'])
+        
+        if user1_card and user2_card:
+            trade_list += (
+                f"🆔 **ID трейда:** `{trade['trade_id']}`\n"
+                f"👤 **Участники:** {trade['user1_id']} ↔️ {trade['user2_id']}\n"
+                f"🎴 **Обмен:** {user1_card['name']} ↔️ {user2_card['name']}\n"
+                f"📅 **Создан:** {trade['created_at'].strftime('%Y-%m-%d %H:%M')}\n"
+            )
+            
+            if trade['user1_id'] == user_id:
+                trade_list += "➡️ Вы инициатор обмена\n"
+            else:
+                trade_list += "➡️ Вы можете принять этот обмен\n"
+            
+            trade_list += "---\n\n"
+    
+    trade_list += "\n💡 **Команды:**\n• `/accepttrade <ID>` - принять обмен\n• `/canceltrade <ID>` - отменить обмен"
+    
+    await update.message.reply_text(trade_list, parse_mode='Markdown')
+
+async def accept_trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if not context.args:
+        await update.message.reply_text("❌ Укажите ID трейда: `/accepttrade <ID>`", parse_mode='Markdown')
+        return
+    
+    try:
+        trade_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Укажите корректный ID трейда (число)")
+        return
+    
+    trade = get_trade(trade_id)
+    if not trade:
+        await update.message.reply_text("❌ Трейд не найден")
+        return
+    
+    if trade['status'] != 'pending':
+        await update.message.reply_text("❌ Этот трейд уже обработан")
+        return
+    
+    if trade['user2_id'] != user_id:
+        await update.message.reply_text("❌ Вы не можете принять этот трейд")
+        return
+    
+    # Проверяем, что у пользователей еще есть карточки для обмена
+    user_data = load_user_data()
+    user1_has_card = any(card['card_id'] == trade['user1_card_id'] for card in user_data[trade['user1_id']]['inventory'])
+    user2_has_card = any(card['card_id'] == trade['user2_card_id'] for card in user_data[trade['user2_id']]['inventory'])
+    
+    if not user1_has_card or not user2_has_card:
+        await update.message.reply_text("❌ Один из участников больше не имеет карточки для обмена")
+        cancel_trade(trade_id)
+        return
+    
+    # Выполняем обмен
+    if execute_trade(trade_id):
+        user1_card = get_card_by_id(trade['user1_card_id'])
+        user2_card = get_card_by_id(trade['user2_card_id'])
+        
+        await update.message.reply_text(
+            f"✅ **Обмен завершен успешно!**\n\n"
+            f"🔄 **Вы получили:** {user1_card['name']} ({user1_card['emoji']} {user1_card['rarity']})\n"
+            f"🎴 **Вы отдали:** {user2_card['name']} ({user2_card['emoji']} {user2_card['rarity']})",
+            parse_mode='Markdown'
+        )
+    else:
+        await update.message.reply_text("❌ Ошибка при выполнении обмена")
+
+async def cancel_trade_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    
+    if not context.args:
+        await update.message.reply_text("❌ Укажите ID трейда: `/canceltrade <ID>`", parse_mode='Markdown')
+        return
+    
+    try:
+        trade_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Укажите корректный ID трейда (число)")
+        return
+    
+    trade = get_trade(trade_id)
+    if not trade:
+        await update.message.reply_text("❌ Трейд не найден")
+        return
+    
+    if trade['status'] != 'pending':
+        await update.message.reply_text("❌ Этот трейд уже обработан")
+        return
+    
+    if trade['user1_id'] != user_id:
+        await update.message.reply_text("❌ Вы можете отменять только свои трейды")
+        return
+    
+    cancel_trade(trade_id)
+    await update.message.reply_text("✅ Трейд отменен")
+
+async def trade_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🔄 **Система обмена карточками**\n\n"
+        "📖 **Как это работает:**\n"
+        "1. Используйте /inventory чтобы посмотреть свои карточки\n"
+        "2. Нажмите на карточку с дубликатами (количество > 1)\n"
+        "3. Нажмите 'Предложить обмен этой карточкой'\n"
+        "4. Укажите @username игрока и ID карточки, которую хотите получить\n\n"
+        "📋 **Команды:**\n"
+        "/trade - начать обмен (альтернативный способ)\n"
+        "/mytrades - мои активные трейды\n"
+        "/accepttrade <ID> - принять предложенный обмен\n"
+        "/canceltrade <ID> - отменить свой трейд\n\n"
+        "💡 **Советы:**\n"
+        "• Обмениваться можно только дубликатами карточек\n"
+        "• Для просмотра ID карточек используйте /inventory\n"
+        "• Трейды должны быть взаимно согласованы",
+        parse_mode='Markdown'
+    )
 
 async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -1160,10 +1573,20 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("rarities", show_rarities))
     application.add_handler(CommandHandler("promo", use_promo))
     application.add_handler(CommandHandler("event", show_event_info))
+    application.add_handler(CommandHandler("trade", trade_help))
+    application.add_handler(CommandHandler("mytrades", show_my_trades))
+    application.add_handler(CommandHandler("accepttrade", accept_trade))
+    application.add_handler(CommandHandler("canceltrade", cancel_trade_command))
+    
+    # Обработчики для текстовых сообщений (для трейдов)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_trade_username))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_trade_target_card))
     
     application.add_handler(CallbackQueryHandler(show_rarity_cards, pattern="^rarity_"))
     application.add_handler(CallbackQueryHandler(handle_navigation, pattern="^nav_"))
     application.add_handler(CallbackQueryHandler(show_inventory_from_callback, pattern="^back_to_rarities$"))
+    application.add_handler(CallbackQueryHandler(show_duplicates, pattern="^show_duplicates$"))
+    application.add_handler(CallbackQueryHandler(start_trade, pattern="^trade_card_"))
     
     logger.info("Бот запущен на Railway...")
     application.run_polling()
