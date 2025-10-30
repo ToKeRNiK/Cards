@@ -3,6 +3,7 @@ import json
 import random
 import logging
 import psycopg2
+import time
 from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
@@ -1538,7 +1539,31 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(f"✅ Промокод успешно активирован!\n{uses_info}")
 
+# ==================== ОБРАБОТЧИК ОШИБОК ====================
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик ошибок"""
+    logger.error(f"Exception while handling an update: {context.error}")
+    
+    # Обработка конфликта нескольких экземпляров бота
+    if "Conflict: terminated by other getUpdates request" in str(context.error):
+        logger.warning("Обнаружен конфликт нескольких экземпляров бота. Перезапуск через 10 секунд...")
+        await asyncio.sleep(10)
+        # Здесь можно добавить логику перезапуска бота
+        return
+    
+    # Обработка других ошибок
+    try:
+        raise context.error
+    except Exception as e:
+        logger.exception(f"Необработанное исключение: {e}")
+
 if __name__ == "__main__":
+    import asyncio
+    
+    # Добавляем задержку перед запуском для избежания конфликтов
+    logger.info("Ожидание 10 секунд перед запуском для избежания конфликтов...")
+    time.sleep(10)
+    
     init_db()
     
     # Проверка существования карточек
@@ -1567,6 +1592,9 @@ if __name__ == "__main__":
 
     application = Application.builder().token(BOT_TOKEN).build()
     
+    # Добавляем обработчик ошибок
+    application.add_error_handler(error_handler)
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("getcard", get_card))
     application.add_handler(CommandHandler("inventory", show_inventory))
@@ -1589,4 +1617,15 @@ if __name__ == "__main__":
     application.add_handler(CallbackQueryHandler(start_trade, pattern="^trade_card_"))
     
     logger.info("Бот запущен на Railway...")
-    application.run_polling()
+    
+    # Запуск бота с обработкой исключений
+    try:
+        application.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True  # Пропускать обновления, полученные во время простоя
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при запуске бота: {e}")
+        logger.info("Перезапуск бота через 30 секунд...")
+        time.sleep(30)
+        # Здесь можно добавить логику автоматического перезапуска
