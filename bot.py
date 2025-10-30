@@ -23,15 +23,11 @@ COOLDOWN_MINUTES = 5
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:GjvKELSoRVzbyXCnxEMBdWvOTiCvufbs@postgres.railway.internal:5432/railway')
 
 # ==================== КОНФИГУРАЦИЯ СОБЫТИЙ ====================
-# Чтобы добавить новое событие, просто добавьте его в EVENTS_CONFIG и EVENT_CARDS
-# Чтобы активировать событие, установите CURRENT_EVENT в ключ события
-
-# Конфигурация всех событий
 EVENTS_CONFIG = {
     "Казань2025": {
         "name": "Казань2025",
-        "key": "Казань",  # Уникальный ключ для идентификации
-        "active": False,  # Включить/выключить событие
+        "key": "Казань",
+        "active": False,
         "start_date": "2025-10-27",
         "end_date": "2025-10-29", 
         "emoji": "🏙️",
@@ -39,8 +35,8 @@ EVENTS_CONFIG = {
     },
     "Хэллоуин2025": {
         "name": "Хэллоуин2025", 
-        "key": "Хэллоуин",  # Уникальный ключ для идентификации
-        "active": True,  # Включить новое событие
+        "key": "Хэллоуин",
+        "active": True,
         "start_date": "2025-10-29",
         "end_date": "2025-10-31",
         "emoji": "🎃",
@@ -48,9 +44,48 @@ EVENTS_CONFIG = {
     }
 }
 
-# Активное событие (измените эту переменную чтобы активировать другое событие)
+# Активное событие
 CURRENT_EVENT = "Хэллоуин2025"
 EVENT_CONFIG = EVENTS_CONFIG[CURRENT_EVENT]
+
+# ==================== СИСТЕМА КРАФТА ====================
+CRAFT_RECIPES = {
+    "Редкая": {
+        "name": "3 Редкие → 1 Сверхредкая",
+        "required_rarity": "Редкая",
+        "required_count": 3,
+        "result_rarity": "Сверхредкая",
+        "emoji": "🟢→🔵"
+    },
+    "Сверхредкая": {
+        "name": "3 Сверхредкие → 1 Эпическая", 
+        "required_rarity": "Сверхредкая",
+        "required_count": 5,
+        "result_rarity": "Эпическая",
+        "emoji": "🔵→🟣"
+    },
+    "Эпическая": {
+        "name": "3 Эпические → 1 Мифическая",
+        "required_rarity": "Эпическая", 
+        "required_count": 6,
+        "result_rarity": "Мифическая",
+        "emoji": "🟣→🔴"
+    },
+    "Мифическая": {
+        "name": "3 Мифические → 1 Легендарная",
+        "required_rarity": "Мифическая",
+        "required_count": 8, 
+        "result_rarity": "Легендарная",
+        "emoji": "🔴→🟡"
+    },
+    "Легендарная": {
+        "name": "3 Легендарные → 1 Секретная",
+        "required_rarity": "Легендарная",
+        "required_count": 10,
+        "result_rarity": "Секретная", 
+        "emoji": "🟡→⚫️"
+    },
+}
 
 # ==================== ОСНОВНЫЕ КАРТОЧКИ ====================
 RARITY_GROUPS = {
@@ -643,6 +678,96 @@ def get_user_card_stats(user_id):
     
     return card_stats
 
+# ==================== СИСТЕМА КРАФТА ====================
+def get_user_craftable_recipes(user_id):
+    """Получение доступных рецептов крафта для пользователя"""
+    user_data = load_user_data()
+    if user_id not in user_data:
+        return {}
+    
+    inventory = user_data[user_id]["inventory"]
+    
+    # Считаем количество карточек по редкостям
+    rarity_count = {}
+    for card in inventory:
+        rarity = card["rarity"]
+        # Учитываем только основные редкости для крафта
+        if rarity in CRAFT_RECIPES:
+            rarity_count[rarity] = rarity_count.get(rarity, 0) + 1
+    
+    # Проверяем, какие рецепты доступны
+    available_recipes = {}
+    for recipe_rarity, recipe in CRAFT_RECIPES.items():
+        required_rarity = recipe["required_rarity"]
+        required_count = recipe["required_count"]
+        
+        if required_rarity in rarity_count and rarity_count[required_rarity] >= required_count:
+            available_recipes[recipe_rarity] = {
+                **recipe,
+                "available_count": rarity_count[required_rarity],
+                "can_craft": rarity_count[required_rarity] // required_count
+            }
+    
+    return available_recipes
+
+def craft_card(user_id, recipe_rarity):
+    """Крафт карточки по рецепту"""
+    user_data = load_user_data()
+    if user_id not in user_data:
+        return None
+    
+    recipe = CRAFT_RECIPES.get(recipe_rarity)
+    if not recipe:
+        return None
+    
+    required_rarity = recipe["required_rarity"]
+    required_count = recipe["required_count"]
+    result_rarity = recipe["result_rarity"]
+    
+    # Получаем инвентарь пользователя
+    inventory = user_data[user_id]["inventory"]
+    
+    # Находим карточки нужной редкости
+    cards_to_remove = []
+    cards_found = 0
+    
+    for card in inventory:
+        if card["rarity"] == required_rarity:
+            cards_to_remove.append(card)
+            cards_found += 1
+            if cards_found >= required_count:
+                break
+    
+    if cards_found < required_count:
+        return None
+    
+    # Удаляем карточки из инвентаря
+    for card in cards_to_remove:
+        inventory.remove(card)
+        user_data[user_id]["total_points"] -= card["points"]
+    
+    # Получаем случайную карточку следующей редкости
+    result_card = get_random_card_by_rarity(result_rarity)
+    if not result_card:
+        return None
+    
+    # Добавляем новую карточку
+    inventory.append({
+        "card_id": result_card["id"],
+        "name": result_card["name"],
+        "rarity": result_card["rarity"],
+        "points": result_card["points"],
+        "acquired": datetime.now(timezone.utc).isoformat(),
+        "from_craft": True
+    })
+    
+    user_data[user_id]["total_points"] += result_card["points"]
+    save_user_data(user_data)
+    
+    logger.info(f"User {user_id} crafted {result_card['name']} using {required_count} {required_rarity} cards")
+    
+    return result_card
+
 # ==================== КОМАНДЫ БОТА ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     available_rarities = get_available_rarities()
@@ -670,6 +795,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/inventory - Показать вашу коллекцию\n"
         "/rarities - Информация о редкостях\n"
         "/promo <код> - Активировать промокод\n"
+        "/craft - Система крафта карточек\n"
         "/event - Информация о событии\n\n"
         f"⏰ **Кулдаун:** {COOLDOWN_MINUTES} минут\n\n"
         f"{rarity_info}",
@@ -1125,6 +1251,145 @@ async def use_promo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(f"✅ Промокод успешно активирован!\n{uses_info}")
 
+# ==================== КОМАНДЫ КРАФТА ====================
+async def show_craft(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Показать доступные рецепты крафта"""
+    user_id = str(update.effective_user.id)
+    
+    available_recipes = get_user_craftable_recipes(user_id)
+    
+    if not available_recipes:
+        await update.message.reply_text(
+            "🔨 **Система крафта**\n\n"
+            "❌ У вас нет достаточного количества карточек для крафта.\n\n"
+            "📋 **Доступные рецепты:**\n"
+            "• 3 Редкие → 1 Сверхредкая 🟢→🔵\n"
+            "• 5 Сверхредкие → 1 Эпическая 🔵→🟣\n" 
+            "• 6 Эпические → 1 Мифическая 🟣→🔴\n"
+            "• 8 Мифические → 1 Легендарная 🔴→🟡\n"
+            "• 10 Легендарные → 1 Секретная 🟡→⚫️\n"
+            "💡 Собирайте дубликаты карточек для крафта!"
+        )
+        return
+    
+    # Создаем клавиатуру с доступными рецептами
+    keyboard = []
+    for recipe_rarity, recipe in available_recipes.items():
+        emoji = recipe["emoji"]
+        name = recipe["name"]
+        can_craft = recipe["can_craft"]
+        available_count = recipe["available_count"]
+        
+        button_text = f"{emoji} {name} (доступно: {can_craft})"
+        keyboard.append([InlineKeyboardButton(button_text, callback_data=f"craft_{recipe_rarity}")])
+    
+    keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="craft_back")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    craft_info = "🔨 **Доступные рецепты крафта:**\n\n"
+    for recipe_rarity, recipe in available_recipes.items():
+        emoji = recipe["emoji"]
+        name = recipe["name"]
+        can_craft = recipe["can_craft"]
+        available_count = recipe["available_count"]
+        required_count = recipe["required_count"]
+        
+        craft_info += f"{emoji} **{name}**\n"
+        craft_info += f"   📦 У вас: {available_count}/{required_count}\n"
+        craft_info += f"   🔄 Можно скрафтить: {can_craft} раз(а)\n\n"
+    
+    await update.message.reply_text(
+        f"🔨 **Система крафта**\n\n"
+        f"{craft_info}"
+        f"💡 Выберите рецепт для крафта:",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
+    )
+
+async def handle_craft_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка callback'ов крафта"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    data = query.data
+    
+    if data == "craft_back":
+        await query.edit_message_text("🔨 Возврат из системы крафта")
+        return
+    
+    if data.startswith("craft_"):
+        recipe_rarity = data.replace("craft_", "")
+        
+        # Проверяем, доступен ли еще рецепт
+        available_recipes = get_user_craftable_recipes(user_id)
+        if recipe_rarity not in available_recipes:
+            await query.edit_message_text("❌ Этот рецепт больше недоступен!")
+            return
+        
+        recipe = available_recipes[recipe_rarity]
+        
+        # Создаем клавиатуру с подтверждением
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Подтвердить крафт", callback_data=f"craft_confirm_{recipe_rarity}"),
+                InlineKeyboardButton("❌ Отмена", callback_data="craft_cancel")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(
+            f"🔨 **Подтверждение крафта**\n\n"
+            f"📋 Рецепт: {recipe['name']}\n"
+            f"📦 Будет использовано: {recipe['required_count']} карточек {recipe['required_rarity']}\n"
+            f"🎁 Вы получите: 1 карточку {recipe['result_rarity']}\n\n"
+            f"⚠️ **Это действие нельзя отменить!**\n"
+            f"Вы уверены, что хотите продолжить?",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+
+async def handle_craft_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка подтверждения крафта"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = str(query.from_user.id)
+    data = query.data
+    
+    if data == "craft_cancel":
+        await query.edit_message_text("❌ Крафт отменен.")
+        return
+    
+    if data.startswith("craft_confirm_"):
+        recipe_rarity = data.replace("craft_confirm_", "")
+        
+        # Выполняем крафт
+        result_card = craft_card(user_id, recipe_rarity)
+        
+        if not result_card:
+            await query.edit_message_text("❌ Ошибка при крафте! Возможно, карточки больше недоступны.")
+            return
+        
+        # Показываем результат
+        caption = (
+            f"🎉 **Крафт успешно завершен!**\n\n"
+            f"🎴 **Вы получили:** {result_card['name']}\n"
+            f"{result_card['emoji']} **Редкость:** {result_card['rarity']}\n"
+            f"⭐ **Очки:** {result_card['points']}\n"
+            f"🔨 **Создано из:** {CRAFT_RECIPES[recipe_rarity]['required_count']} "
+            f"{CRAFT_RECIPES[recipe_rarity]['required_rarity']} карточек"
+        )
+        
+        try:
+            with open(result_card['image'], 'rb') as photo:
+                await query.message.reply_photo(photo=photo, caption=caption, parse_mode='Markdown')
+        except FileNotFoundError:
+            await query.message.reply_text(f"❌ Ошибка: изображение {result_card['image']} не найдено\n\n{caption}")
+        
+        await query.edit_message_text("✅ Крафт завершен! Проверьте результат выше.")
+
 if __name__ == "__main__":
     init_db()
     
@@ -1159,11 +1424,15 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("inventory", show_inventory))
     application.add_handler(CommandHandler("rarities", show_rarities))
     application.add_handler(CommandHandler("promo", use_promo))
+    application.add_handler(CommandHandler("craft", show_craft))
     application.add_handler(CommandHandler("event", show_event_info))
     
     application.add_handler(CallbackQueryHandler(show_rarity_cards, pattern="^rarity_"))
     application.add_handler(CallbackQueryHandler(handle_navigation, pattern="^nav_"))
     application.add_handler(CallbackQueryHandler(show_inventory_from_callback, pattern="^back_to_rarities$"))
+    application.add_handler(CallbackQueryHandler(handle_craft_callback, pattern="^craft_"))
+    application.add_handler(CallbackQueryHandler(handle_craft_confirmation, pattern="^craft_confirm_"))
+    application.add_handler(CallbackQueryHandler(handle_craft_confirmation, pattern="^craft_cancel$"))
     
     logger.info("Бот запущен на Railway...")
     application.run_polling()
