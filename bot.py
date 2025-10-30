@@ -1278,7 +1278,6 @@ async def show_craft(update: Update, context: ContextTypes.DEFAULT_TYPE):
         emoji = recipe["emoji"]
         name = recipe["name"]
         can_craft = recipe["can_craft"]
-        available_count = recipe["available_count"]
         
         button_text = f"{emoji} {name} (доступно: {can_craft})"
         keyboard.append([InlineKeyboardButton(button_text, callback_data=f"craft_{recipe_rarity}")])
@@ -1322,10 +1321,10 @@ async def handle_craft_callback(update: Update, context: ContextTypes.DEFAULT_TY
     if data.startswith("craft_"):
         recipe_rarity = data.replace("craft_", "")
         
-        # Проверяем, доступен ли еще рецепт
+        # ВАЖНОЕ ИСПРАВЛЕНИЕ: Загружаем актуальные данные пользователя перед проверкой
         available_recipes = get_user_craftable_recipes(user_id)
         if recipe_rarity not in available_recipes:
-            await query.edit_message_text("❌ Этот рецепт больше недоступен!")
+            await query.edit_message_text("❌ Этот рецепт больше недоступен! Возможно, у вас недостаточно карточек.")
             return
         
         recipe = available_recipes[recipe_rarity]
@@ -1364,6 +1363,12 @@ async def handle_craft_confirmation(update: Update, context: ContextTypes.DEFAUL
     
     if data.startswith("craft_confirm_"):
         recipe_rarity = data.replace("craft_confirm_", "")
+        
+        # ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем доступность рецепта с актуальными данными
+        available_recipes = get_user_craftable_recipes(user_id)
+        if recipe_rarity not in available_recipes:
+            await query.edit_message_text("❌ Ошибка при крафте! Возможно, карточки больше недоступны.")
+            return
         
         # Выполняем крафт
         result_card = craft_card(user_id, recipe_rarity)
