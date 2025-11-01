@@ -144,7 +144,7 @@ RARITY_GROUPS = {
             {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
             {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
             {"id": 6.11, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
-            {"id": 6.12, "name": "Рик Граймс", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
+            {"id": 6.12, "name": "Максим с Биг Мамой", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
         ]
     },
     "Секретная": {
