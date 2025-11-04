@@ -49,7 +49,7 @@ EVENTS_CONFIG = {
     "Звездные войны2025": {
         "name": "Звездные войны2025", 
         "key": "Звездные войны",  # Уникальный ключ для идентификации
-        "active": True,  # Включить новое событие
+        "active": False,  # Включить новое событие
         "start_date": "2025-11-01",
         "end_date": "2025-11-30",
         "emoji": "☄️",
@@ -109,6 +109,7 @@ RARITY_GROUPS = {
             {"id": 4.7, "name": "Кремка с морской солью", "image": "cards/Epic/card4.7.jpg", "points": 1000},
             {"id": 4.8, "name": "Вкусно и точка", "image": "cards/Epic/card4.8.jpg", "points": 1000},
             {"id": 4.9, "name": "Шапочка для плавания", "image": "cards/Epic/card4.9.jpg", "points": 1000},
+            {"id": 4.11, "name": "Бубы", "image": "cards/Epic/card4.10.jpg", "points": 1000},
         ]
     },
     "Мифическая": {
@@ -126,6 +127,7 @@ RARITY_GROUPS = {
             {"id": 5.7, "name": "Мирослав с автоматом", "image": "cards/Mythic/card5.7.jpg", "points": 5000},
             {"id": 5.8, "name": "Кофейная кремка", "image": "cards/Mythic/card5.8.jpg", "points": 5000},
             {"id": 5.9, "name": "Миша Медведь на ОБЖ", "image": "cards/Mythic/card5.9.jpg", "points": 5000},
+            {"id": 5.11, "name": "Молочная речка", "image": "cards/Mythic/card5.10.jpg", "points": 5000},
         ]
     },
     "Легендарная": {
@@ -144,7 +146,9 @@ RARITY_GROUPS = {
             {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
             {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
             {"id": 6.11, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
-            {"id": 6.12, "name": "Максим с Биг Мамой", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
+            {"id": 6.12, "name": "Рик Граймс", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
+            {"id": 6.13, "name": "Марк опять закинулся", "image": "cards/Legendary/card6.12.jpg", "points": 10000},
+            {"id": 6.14, "name": "Миша Динозавр качок", "image": "cards/Legendary/card6.13.jpg", "points": 10000},
         ]
     },
     "Секретная": {
@@ -161,6 +165,7 @@ RARITY_GROUPS = {
             {"id": 7.6, "name": "Михаил Медведь купил Нигерию", "image": "cards/Secret/card7.6.jpg", "points": 20000},
             {"id": 7.7, "name": "twenty-seven", "image": "cards/Secret/card7.7.jpg", "points": 20000},
             {"id": 7.8, "name": "Марк в розовой машине", "image": "cards/Secret/card7.8.jpg", "points": 20000},
+            {"id": 7.9, "name": "Толсты Мини литвин в Маке", "image": "cards/Secret/card7.9.jpg", "points": 20000},
         ]
     },
     "Эксклюзивная": {
@@ -172,6 +177,7 @@ RARITY_GROUPS = {
             {"id": 8.1, "name": "Миши в Туапсе", "image": "cards/Exclusive/card8.1.jpg", "points": 50000},
             {"id": 8.2, "name": "Место спавна гадостей", "image": "cards/Exclusive/card8.2.jpg", "points": 50000},
             {"id": 8.3, "name": "Президентский", "image": "cards/Exclusive/card8.3.jpg", "points": 50000},
+            {"id": 8.4, "name": "Юпитер", "image": "cards/Exclusive/card8.4.jpg", "points": 50000},
         ]
     },
 }
