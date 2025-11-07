@@ -40,7 +40,7 @@ EVENTS_CONFIG = {
     "Хэллоуин2025": {
         "name": "Хэллоуин2025", 
         "key": "Хэллоуин",  # Уникальный ключ для идентификации
-        "active": True,  # Включить новое событие
+        "active": False,  # Включить новое событие
         "start_date": "2025-10-29",
         "end_date": "2025-10-31",
         "emoji": "🎃",
@@ -49,7 +49,7 @@ EVENTS_CONFIG = {
     "Звездные войны2025": {
         "name": "Звездные войны2025", 
         "key": "Звездные войны",  # Уникальный ключ для идентификации
-        "active": False,  # Включить новое событие
+        "active": True,  # Включить новое событие
         "start_date": "2025-11-01",
         "end_date": "2025-11-30",
         "emoji": "☄️",
@@ -84,7 +84,6 @@ RARITY_GROUPS = {
         "adjusted_chance": 21.896,
         "emoji": "🔵",
         "cards": [
-            {"id": 3, "name": "Ярик", "image": "cards/SuperRare/card3.jpg", "points": 200},
             {"id": 3.1, "name": "УВЗ", "image": "cards/SuperRare/card3.1.jpg", "points": 200},
             {"id": 3.2, "name": "Чижик", "image": "cards/SuperRare/card3.2.jpg", "points": 200},
             {"id": 3.3, "name": "Фикс в Прайме", "image": "cards/SuperRare/card3.3.jpg", "points": 200},
@@ -110,6 +109,7 @@ RARITY_GROUPS = {
             {"id": 4.8, "name": "Вкусно и точка", "image": "cards/Epic/card4.8.jpg", "points": 1000},
             {"id": 4.9, "name": "Шапочка для плавания", "image": "cards/Epic/card4.9.jpg", "points": 1000},
             {"id": 4.11, "name": "Бубы", "image": "cards/Epic/card4.10.jpg", "points": 1000},
+            {"id": 4.12, "name": "Ярик", "image": "cards/Epic/card4.12.jpg", "points": 200},
         ]
     },
     "Мифическая": {
@@ -143,10 +143,9 @@ RARITY_GROUPS = {
             {"id": 6.5, "name": "Казанский Таракан", "image": "cards/Legendary/card6.5.jpg", "points": 10000},
             {"id": 6.6, "name": "Миша Combination", "image": "cards/Legendary/card6.6.jpg", "points": 10000},
             {"id": 6.7, "name": "Михаил Медвед на соревах", "image": "cards/Legendary/card6.7.jpg", "points": 10000},
-            {"id": 6.8, "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
-            {"id": 6.9, "name": "Сигма и 27", "image": "cards/Legendary/card6.9.jpg", "points": 10000},
+            {"id": 6.8  , "name": "Марк Хайзенберг", "image": "cards/Legendary/card6.8.jpg", "points": 10000},
             {"id": 6.11, "name": "Рик Граймс", "image": "cards/Legendary/card6.10.jpg", "points": 10000},
-            {"id": 6.12, "name": "Максим с Биг Мамой", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
+            {"id": 6.12, "name": "Максим С Биг мамой", "image": "cards/Legendary/card6.11.jpg", "points": 10000},
             {"id": 6.13, "name": "Марк опять закинулся", "image": "cards/Legendary/card6.12.jpg", "points": 10000},
             {"id": 6.14, "name": "Миша Динозавр качок", "image": "cards/Legendary/card6.13.jpg", "points": 10000},
         ]
@@ -207,6 +206,7 @@ EVENT_CARDS = {
             {"id": 10.3, "name": "Хэллоуинский Миша Динозавр", "image": "cards/Halloween/card10.3.jpg", "points": 30000},
             {"id": 10.4, "name": "Хэллоуинский Оператор", "image": "cards/Halloween/card10.4.jpg", "points": 30000},
             {"id": 10.5, "name": "Хэллоуинский Мини Литвин", "image": "cards/Halloween/card10.5.jpg", "points": 30000},
+            {"id": 10.6, "name": "Хэллоуинский Кефас", "image": "cards/Halloween/card10.6.jpg", "points": 30000},
         ]
     },
     "Звездные войны": {
@@ -290,7 +290,15 @@ PROMOCODES = {
         "max_uses": 10,
         "description": "Случайная карточка из события Хэллоуин"
     },
+    "halloweenkfc2025": {
+        "type": "specific_card",
+        "card_id": 10.6,
+        "uses_left": 5,
+        "max_uses": 5,
+        "description": "Хэллоуинский Кефас "
+    },
 }
+
 
 # ==================== БАЗА ДАННЫХ ====================
 def get_db_connection():
